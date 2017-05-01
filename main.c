@@ -8,7 +8,7 @@
 #include "room.h"
 #include "parse.h"
 
-bool g_StillAlive = 1;
+bool g_StillAlive = true;
 
 void CreateTwoRooms()
 {
@@ -52,7 +52,7 @@ void ParseCommand(char* command)
   if(IsDieCommand(command))
   {
     printf("You are eaten by a grue.");
-    g_StillAlive = 0;
+    g_StillAlive = false;
     return;
   }
 }
