@@ -10,5 +10,7 @@
 
 #include <stdbool.h>
 
+extern bool g_StillAlive;
 bool IsQuitCommand(char* command);
 bool IsLookCommand(char* command);
+bool IsDieCommand(char* command);
