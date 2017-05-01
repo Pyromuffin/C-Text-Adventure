@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include "room.h"
+#include "parse.h"
 
 
 void CreateTwoRooms()
@@ -40,26 +41,14 @@ void PrintArrivalGreeting( Room* room )
   room->visited = true;
 }
 
-bool IsQuitCommand(char* command)
-{
-  return !strcmp(command, "quit");
-
-}
-
-bool IsLookCommand(char* command)
-{
-  return !strcmp(command, "look") || !strcmp(command,"examine");
-}
-
 void ParseCommand(char* command)
 {
-    if(IsLookCommand(command))
-    {
-      PrintRoomDescription(GetCurrentRoom());
-      return;
-    }
+  if(IsLookCommand(command))
+  {
+    PrintRoomDescription(GetCurrentRoom());
+    return;
+  }
 }
-
 
 int main( int argc, char** args )
 {
@@ -73,7 +62,6 @@ int main( int argc, char** args )
     printf( ">" );
     scanf("%s", command);
     ParseCommand(command);
-
   }
 
   return 0;
