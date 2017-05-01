@@ -16,3 +16,8 @@ bool IsLookCommand(char* command)
     return !strcmp(command, "look") || !strcmp(command,"examine");
 }
 
+bool IsDieCommand(char* command)
+{
+    return !strcmp(command, "die");
+
+}

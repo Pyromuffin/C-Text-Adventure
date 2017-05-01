@@ -8,6 +8,7 @@
 #include "room.h"
 #include "parse.h"
 
+bool g_StillAlive = 1;
 
 void CreateTwoRooms()
 {
@@ -48,6 +49,12 @@ void ParseCommand(char* command)
     PrintRoomDescription(GetCurrentRoom());
     return;
   }
+  if(IsDieCommand(command))
+  {
+    printf("You are eaten by a grue.");
+    g_StillAlive = 0;
+    return;
+  }
 }
 
 int main( int argc, char** args )
@@ -57,7 +64,7 @@ int main( int argc, char** args )
   CreateTwoRooms();
   PrintArrivalGreeting(GetCurrentRoom());
 
-  while( !IsQuitCommand(command) )
+  while( !IsQuitCommand(command) && g_StillAlive )
   {
     printf( ">" );
     scanf("%s", command);
