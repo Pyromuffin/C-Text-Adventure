@@ -32,8 +32,8 @@ typedef struct Room
 
 } Room;
 
-extern RoomLabel g_CurrentRoom;
-extern Room g_AllTheRooms[kRoomCount];
+//extern RoomLabel g_CurrentRoom;
+//extern Room g_AllTheRooms[kRoomCount];
 
 void ConnectRoomsTogether(RoomLabel from, RoomLabel to, Direction dir);
 void CreateSingleRoom( RoomLabel label, char* roomName, char* roomDescription );
