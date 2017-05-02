@@ -42,33 +42,34 @@ void PrintArrivalGreeting( Room* room )
   room->visited = true;
 }
 
-void ParseCommand(char* command)
-{
-  if(IsLookCommand(command))
-  {
-    PrintRoomDescription(GetCurrentRoom());
-    return;
-  }
-  if(IsDieCommand(command))
-  {
-    printf("You are eaten by a grue.");
-    g_StillAlive = false;
-    return;
-  }
-}
-
 int main( int argc, char** args )
 {
-  char command[256] = "Fake Command!";
+    char commandString[256] = "Fake Command!";
+    char terminator[1];
+    CreateTwoRooms();
+    PrintArrivalGreeting(GetCurrentRoom());
+    RegisterCommands();
 
-  CreateTwoRooms();
-  PrintArrivalGreeting(GetCurrentRoom());
-
-  while( !IsQuitCommand(command) && g_StillAlive )
+  while( !IsQuitCommand(commandString) && g_StillAlive )
   {
-    printf( ">" );
-    scanf("%s", command);
-    ParseCommand(command);
+      printf( ">" );
+      fflush(stdout);
+
+      fgets(commandString, 255, stdin);
+      if(commandString[0] == '\n')
+          continue;
+
+      ParseResult result = ParseCommand(commandString);
+      if( result.valid )
+      {
+        const Command* command = GetCommand(result.commandLabel);
+        command->execFunction(command, result.subject, result.object);
+        fflush(stdout);
+      }
+      else
+      {
+          printf("I don't know what is going on.\n");
+      }
   }
 
   return 0;
