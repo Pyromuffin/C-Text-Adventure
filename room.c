@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <printf.h>
 #include "room.h"
 
 Room g_AllTheRooms[kRoomCount];
@@ -55,4 +56,28 @@ void CreateSingleRoom( RoomLabel label, char* roomName, char* roomDescription )
   {
     room->connectedRooms[i] = kNoRoom;
   }
+}
+
+void MoveToRoom(RoomLabel label)
+{
+    g_CurrentRoom = label;
+}
+
+
+void PrintRoomDescription( RoomLabel label )
+{
+    Room* room = GetRoomPtr(label);
+    printf("%s\n", room->roomDescription);
+}
+
+void PrintArrivalGreeting( RoomLabel label )
+{
+    Room* room = GetRoomPtr(label);
+    printf("You arrive in %s.\n", room->roomName);
+    if( !room->visited)
+    {
+        PrintRoomDescription(room);
+    }
+
+    room->visited = true;
 }
