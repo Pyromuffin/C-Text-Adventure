@@ -22,7 +22,7 @@ bool IsDieCommand(char* command)
 
 }
 
-static bool StringHasAnyOfTheseWords(char* inputStr, char** wordList, int wordCount)
+static bool StringHasAnyOfTheseWords(char* inputStr, const char** wordList, int wordCount)
 {
     // this is probably the slowest way to do this.
     char copyBuffer[256];

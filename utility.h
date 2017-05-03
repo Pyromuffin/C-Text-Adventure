@@ -4,4 +4,4 @@
 #pragma once
 #include <stdlib.h>
 
-#define ARRAY_COUNT(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+#define ARRAY_COUNT(arr) (sizeof(arr) / sizeof(arr[0]))

@@ -31,7 +31,7 @@ typedef enum ParseFlags
 
 typedef struct Command
 {
-    char** verbs;
+    const char** verbs;
     int verbCount;
     CommandExecFunction execFunction;
     ParseFlags parseFlags;

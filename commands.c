@@ -82,20 +82,24 @@ void ExecuteMoveCommand(const Command* this, Referent* subject, Referent* object
     }
 }
 
+#define LIST_VERBS( cmd, ... ) \
+static const char* cmd##Verbs[] = { __VA_ARGS__ }; \
+cmd.verbs = cmd##Verbs; \
+cmd.verbCount = ARRAY_COUNT(cmd##Verbs);
+
 void RegisterCommands() {
 
     Command lookCommand;
-    static char* lookVerbs[] = {"look", "examine", "view", "describe" };
-    lookCommand.verbs = lookVerbs;
-    lookCommand.verbCount = ARRAY_COUNT(lookVerbs);
+    LIST_VERBS(lookCommand, "look", "examine", "view", "describe" );
+    //static const char* lookVerbs[] = {  "look", "examine", "view", "describe" };
+    //lookCommand.verbs = lookVerbs;
+    //lookCommand.verbCount = ARRAY_COUNT(lookVerbs);
     lookCommand.parseFlags = kParseFlagImplicitObject | kParseFlagExplicitObject;
     lookCommand.execFunction = ExecuteLookCommand;
     RegisterCommand(kCommandLook, &lookCommand);
 
     Command moveCommand;
-    static char* moveVerbs[] = {"go", "move", "walk", "travel" };
-    moveCommand.verbs = moveVerbs;
-    moveCommand.verbCount = ARRAY_COUNT(moveVerbs);
+    LIST_VERBS(moveCommand, "go", "move", "walk", "travel" );
     moveCommand.parseFlags = kParseFlagExplicitObject;
     moveCommand.execFunction = ExecuteMoveCommand;
     RegisterCommand(kCommandMove, &moveCommand);
