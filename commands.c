@@ -25,11 +25,11 @@ void ExecuteLookCommand(const Command* this, Referent* subject, Referent* object
 {
     if( object && (object->type & kReferentItem) )
     {
-        printf("%s", object );
+        printf("%s", object->item->description);
     }
     else
     {
-        printf( "%s", GetCurrentRoom()->roomDescription );
+        printf("%s", GetCurrentRoom()->roomDescription);
     }
 }
 
