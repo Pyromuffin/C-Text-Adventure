@@ -21,15 +21,64 @@ void RegisterCommand(CommandLabel label, Command* command)
     s_CommandsRegistered[label] = true;
 }
 
-void ExecuteLookCommand(const Command* this, Item* subject, Item* object)
+void ExecuteLookCommand(const Command* this, Referent* subject, Referent* object)
 {
-    if( object )
+    if( object && (object->type & kReferentItem) )
     {
-        printf("%s", object->description );
+        printf("%s", object );
     }
     else
     {
         printf( "%s", GetCurrentRoom()->roomDescription );
+    }
+}
+
+
+void ExecuteMoveDirection(Direction dir)
+{
+    Room* currentRoom = GetCurrentRoom();
+    RoomLabel targetRoom = currentRoom->connectedRooms[dir];
+
+    if(targetRoom != kNoRoom)
+    {
+        MoveToRoom(targetRoom);
+        PrintArrivalGreeting(targetRoom);
+    }
+    else
+    {
+        printf("I can't go %s.\n", GetDirectionString(dir));
+    }
+}
+
+void ExecuteMoveRoom(RoomLabel label)
+{
+    Room* current = GetCurrentRoom();
+
+    for(int i =0; i < kDirectionCount; i ++ )
+    {
+        if( current->connectedRooms[i] == label)
+        {
+            MoveToRoom(label);
+            PrintArrivalGreeting(label);
+            return;
+        }
+    }
+
+    printf("I can't reach %s from here.\n", GetRoomPtr(label)->roomName);
+}
+
+void ExecuteMoveCommand(const Command* this, Referent* subject, Referent* object)
+{
+    assert(object);
+    assert(object->type & (kReferentDirection | kReferentRoom));
+    // somehow get direction out of object.
+    if(object->type & kReferentDirection)
+    {
+        ExecuteMoveDirection(object->direction);
+    }
+    else if (object->type & kReferentRoom)
+    {
+        ExecuteMoveRoom(object->room);
     }
 }
 
@@ -42,6 +91,17 @@ void RegisterCommands() {
     lookCommand.parseFlags = kParseFlagImplicitObject | kParseFlagExplicitObject;
     lookCommand.execFunction = ExecuteLookCommand;
     RegisterCommand(kCommandLook, &lookCommand);
+
+    Command moveCommand;
+    static char* moveVerbs[] = {"go", "move", "walk", "travel" };
+    moveCommand.verbs = moveVerbs;
+    moveCommand.verbCount = ARRAY_COUNT(moveVerbs);
+    moveCommand.parseFlags = kParseFlagExplicitObject;
+    moveCommand.execFunction = ExecuteMoveCommand;
+    RegisterCommand(kCommandMove, &moveCommand);
+
+
+
 
 }
 

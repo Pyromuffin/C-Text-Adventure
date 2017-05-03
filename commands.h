@@ -4,11 +4,11 @@
 #pragma once
 #include <stdbool.h>
 
-typedef struct Item Item;
+typedef struct Referent Referent;
 typedef struct Command Command;
 
 typedef bool (*ParseFunction)(char*);
-typedef void (*CommandExecFunction)(const Command*, Item*, Item*);
+typedef void (*CommandExecFunction)(const Command*, Referent*, Referent*);
 
 typedef enum CommandLabel
 {
@@ -16,6 +16,7 @@ typedef enum CommandLabel
     kCommandDie,
     kCommandQuit,
     kCommandTake,
+    kCommandMove,
 
     kCommandCount,
 } CommandLabel;

@@ -11,6 +11,14 @@ typedef enum Direction
   kDirectionCount, // keep me at the bottom.
 } Direction;
 
+const char* directionStrings[kDirectionCount] =
+        {
+                "north",
+                "west",
+                "south",
+                "east",
+        };
+
 typedef enum RoomLabel
 {
   kBethsRoom,
@@ -40,3 +48,8 @@ void CreateSingleRoom( RoomLabel label, char* roomName, char* roomDescription );
 Direction GetOpposingDirection( Direction dir );
 Room* GetRoomPtr( RoomLabel label);
 Room* GetCurrentRoom();
+void MoveToRoom( RoomLabel label);
+
+void PrintArrivalGreeting( RoomLabel label );
+void PrintRoomDescription( RoomLabel label );
+const char* GetDirectionString(Direction dir) { return directionStrings[dir]; };

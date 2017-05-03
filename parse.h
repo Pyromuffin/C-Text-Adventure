@@ -12,8 +12,8 @@ typedef struct ParseResult
 {
     bool valid;
     CommandLabel commandLabel;
-    Item *subject;
-    Item *object;
+    Referent *subject;
+    Referent *object;
 } ParseResult;
 
 ParseResult ParseCommand(char* command);

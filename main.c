@@ -26,21 +26,7 @@ void CreateTwoRooms()
 }
 
 
-void PrintRoomDescription( Room* room )
-{
-  printf("%s\n", room->roomDescription);
-}
 
-void PrintArrivalGreeting( Room* room )
-{
-  printf("You arrive in %s.\n", room->roomName);
-  if( !room->visited)
-  {
-    PrintRoomDescription(room);
-  }
-
-  room->visited = true;
-}
 
 int main( int argc, char** args )
 {
@@ -52,7 +38,7 @@ int main( int argc, char** args )
 
   while( !IsQuitCommand(commandString) && g_StillAlive )
   {
-      printf( ">" );
+      printf( "> " );
       fflush(stdout);
 
       fgets(commandString, 255, stdin);
