@@ -6,6 +6,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(SOURCE_FILES
         main.c
         room.c
-        room.h parse.h parse.c commands.h commands.c items.h utility.h)
+        room.h parse.h parse.c commands.h commands.c items.h utility.h utility.c)
 
 add_executable(C_Text_Adventure ${SOURCE_FILES})
