@@ -1,9 +1,9 @@
 //
 // Created by Kelly MacNeill on 5/1/17.
 //
-
 #pragma once
 
+#include "room.h"
 
 typedef enum ItemFlags
 {

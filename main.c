@@ -33,7 +33,7 @@ int main( int argc, char** args )
     char commandString[256] = "Fake Command!";
     char terminator[1];
     CreateTwoRooms();
-    PrintArrivalGreeting(GetCurrentRoom());
+    PrintArrivalGreeting(kDefaultRoom);
     RegisterCommands();
 
   while( !IsQuitCommand(commandString) && g_StillAlive )

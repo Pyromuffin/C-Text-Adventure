@@ -5,6 +5,14 @@
 Room g_AllTheRooms[kRoomCount];
 RoomLabel g_CurrentRoom = kDefaultRoom;
 
+const char* s_DirectionStrings[kDirectionCount] =
+{
+    "north",
+    "west",
+    "south",
+    "east",
+};
+
 Room* GetCurrentRoom()
 {
   return &g_AllTheRooms[g_CurrentRoom];
@@ -63,7 +71,6 @@ void MoveToRoom(RoomLabel label)
     g_CurrentRoom = label;
 }
 
-
 void PrintRoomDescription( RoomLabel label )
 {
     Room* room = GetRoomPtr(label);
@@ -76,8 +83,13 @@ void PrintArrivalGreeting( RoomLabel label )
     printf("You arrive in %s.\n", room->roomName);
     if( !room->visited)
     {
-        PrintRoomDescription(room);
+        PrintRoomDescription(label);
     }
 
     room->visited = true;
+}
+
+const char *GetDirectionString(Direction dir)
+{
+     return s_DirectionStrings[dir];
 }
