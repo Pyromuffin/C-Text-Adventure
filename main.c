@@ -7,6 +7,7 @@
 
 #include "room.h"
 #include "parse.h"
+#include "utility.h"
 
 bool g_StillAlive = true;
 
@@ -44,6 +45,8 @@ int main( int argc, char** args )
       fgets(commandString, 255, stdin);
       if(commandString[0] == '\n')
           continue;
+
+      TrimSelf(commandString);
 
       ParseResult result = ParseCommand(commandString);
       if( result.valid )
