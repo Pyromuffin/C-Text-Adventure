@@ -48,6 +48,8 @@ static bool StringHasAnyOfTheseWords(char* inputStr, char** wordList, int wordCo
 ParseResult ParseCommand(char* commandString)
 {
     ParseResult result;
+    result.object = NULL;
+    result.subject = NULL;
 
     for(int i = 0; i < kCommandCount; i ++)
     {

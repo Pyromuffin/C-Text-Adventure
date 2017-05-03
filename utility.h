@@ -5,3 +5,6 @@
 #include <stdlib.h>
 
 #define ARRAY_COUNT(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+
+bool IsWhiteSpace(char c);
+void TrimSelf(char* input);
