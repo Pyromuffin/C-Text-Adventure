@@ -4,6 +4,10 @@
 #pragma once
 
 #include "room.h"
+#include "utility.h"
+
+typedef uint ReferentHandle;
+extern const uint MAX_REFERENT_COUNT;
 
 typedef enum ItemFlags
 {
@@ -22,7 +26,6 @@ typedef enum ReferentType
 
 typedef struct Item
 {
-    char* name;
     char* description;
     ItemFlags flags;
 
@@ -31,7 +34,7 @@ typedef struct Item
 typedef struct Referent
 {
     ReferentType type;
-    char* name;
+    char** names;
     union
     {
         Direction direction;
@@ -40,3 +43,7 @@ typedef struct Referent
     };
 
 } Referent;
+
+
+ReferentHandle RegisterReferent(Referent* referent);
+const Referent* GetReferent(ReferentHandle handle);
