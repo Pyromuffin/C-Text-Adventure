@@ -45,23 +45,37 @@ static bool StringHasAnyOfTheseWords(char* inputStr, const char** wordList, int 
     return false;
 }
 
-ParseResult ParseCommand(char* commandString)
-{
-    ParseResult result;
-    result.object = NULL;
-    result.subject = NULL;
 
+CommandLabel FindVerb( char* commandString )
+{
     for(int i = 0; i < kCommandCount; i ++)
     {
         const Command* command = GetCommand((CommandLabel)i);
         if( StringHasAnyOfTheseWords(commandString, command->verbs, command->verbCount))
         {
-            result.valid = true;
-            result.commandLabel = (CommandLabel)i;
-            return result;
+          return (CommandLabel)i;
         }
     }
 
+    return kCommandInvalid;
+}
+
+
+ParseResult ParseCommand(char* commandString)
+{
+    ParseResult result;
+    result.object = NULL;
+    result.subject = NULL;
     result.valid = false;
+
+    CommandLabel verb = FindVerb(commandString);
+    if( verb != kCommandInvalid )
+    {
+        const Command* command = GetCommand(verb);
+        result.valid = true;
+
+    }
+
+
     return result;
 }

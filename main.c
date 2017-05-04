@@ -1,65 +1,91 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
 #include <stdbool.h>
-#include <assert.h>
 
 #include "room.h"
 #include "parse.h"
-#include "utility.h"
+#include "IndexVector.h"
 
 bool g_StillAlive = true;
 
 void CreateTwoRooms()
 {
-  CreateSingleRoom(
-    kBethsRoom,
-    "Beth's Room",
-    "This is a nice room. No cats allowed!");
+    CreateSingleRoom(
+            kBethsRoom,
+            "Beth's Room",
+            "This is a nice room. No cats allowed!");
 
-  CreateSingleRoom(
-    kLivingRoom,
-    "The Living Room",
-    "Covered in cat hair. Constant beeping.");
+    CreateSingleRoom(
+            kLivingRoom,
+            "The Living Room",
+            "Covered in cat hair. Constant beeping.");
 
-  ConnectRoomsTogether(kBethsRoom, kLivingRoom, kSouth);
+    ConnectRoomsTogether(kBethsRoom, kLivingRoom, kSouth);
+}
+
+void VectorTest()
+{
+    IndexVector* v = AllocateIndexVector(1, "test 1");
+    PushIndex(v, 10);
+
+    PushIndex(v, 11);
+    PushIndex(v, 12);
+    PushIndex(v, 13);
+    PushIndex(v, 14);
+
+    IndexVector* potato = AllocateIndexVector(100, "Test 2");
+
+    FreeIndexVector(v);
+
+    FreeIndexVector(potato);
+
 }
 
 
-
-
-int main( int argc, char** args )
+void Init()
 {
-    char commandString[256] = "Fake Command!";
-    char terminator[1];
-    CreateTwoRooms();
-    PrintArrivalGreeting(kDefaultRoom);
+    InitVectorTracking();
     RegisterCommands();
 
-  while( !IsQuitCommand(commandString) && g_StillAlive )
-  {
-      printf( "> " );
-      fflush(stdout);
+    CreateTwoRooms();
+    VectorTest();
+}
 
-      fgets(commandString, 255, stdin);
-      if(commandString[0] == '\n')
-          continue;
+void CleanUp()
+{
+    CheckForVectorLeaks();
+}
 
-      TrimSelf(commandString);
+int main(int argc, char **args)
+{
+    Init();
 
-      ParseResult result = ParseCommand(commandString);
-      if( result.valid )
-      {
-        const Command* command = GetCommand(result.commandLabel);
-        command->execFunction(command, result.subject, result.object);
+    char commandString[256] = "Fake Command!";
+    PrintArrivalGreeting(kDefaultRoom);
+
+    while (!IsQuitCommand(commandString) && g_StillAlive)
+    {
+        printf("> ");
         fflush(stdout);
-      }
-      else
-      {
-          printf("I don't know what is going on.\n");
-      }
-  }
 
-  return 0;
+        fgets(commandString, 255, stdin);
+        if (commandString[0] == '\n')
+            continue;
+
+        TrimSelf(commandString);
+
+        ParseResult result = ParseCommand(commandString);
+        if (result.valid)
+        {
+            const Command *command = GetCommand(result.commandLabel);
+            command->execFunction(command, result.subject, result.object);
+            fflush(stdout);
+        }
+        else
+        {
+            printf("I don't know what is going on.\n");
+        }
+    }
+
+    CleanUp();
+    return 0;
 }

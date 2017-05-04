@@ -19,6 +19,7 @@ typedef enum CommandLabel
     kCommandMove,
 
     kCommandCount,
+    kCommandInvalid = -1,
 } CommandLabel;
 
 typedef enum ParseFlags

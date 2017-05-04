@@ -1,6 +1,8 @@
 #pragma once
 #include <stdbool.h>
 
+typedef struct Referent Referent;
+
 typedef enum Direction
 {
   kNorth,
@@ -10,9 +12,6 @@ typedef enum Direction
 
   kDirectionCount, // keep me at the bottom.
 } Direction;
-
-
-
 
 typedef enum RoomLabel
 {
@@ -45,6 +44,8 @@ Room* GetRoomPtr( RoomLabel label);
 Room* GetCurrentRoom();
 void MoveToRoom( RoomLabel label);
 
+
+Referent* GetReferentsInRoom( RoomLabel label );
 void PrintArrivalGreeting( RoomLabel label );
 void PrintRoomDescription( RoomLabel label );
 const char* GetDirectionString(Direction dir);
