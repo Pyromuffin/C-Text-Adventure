@@ -19,6 +19,5 @@ typedef struct ParseResult
 ParseResult ParseCommand(char* command);
 
 
-bool IsQuitCommand(char* command);
 bool IsLookCommand(char* command);
 bool IsDieCommand(char* command);
