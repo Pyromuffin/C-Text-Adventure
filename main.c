@@ -48,6 +48,7 @@ void Init()
 
     CreateTwoRooms();
     VectorTest();
+    MakeSomeItems();
 }
 
 void CleanUp()

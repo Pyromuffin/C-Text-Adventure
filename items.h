@@ -7,7 +7,6 @@
 #include "utility.h"
 
 typedef uint ReferentHandle;
-extern const uint MAX_REFERENT_COUNT;
 
 typedef enum ItemFlags
 {
@@ -35,15 +34,19 @@ typedef struct Referent
 {
     ReferentType type;
     char** names;
+    uint nameCount;
+
     union
     {
         Direction direction;
         Item* item;
         RoomLabel room;
     };
-
 } Referent;
 
+extern const uint MAX_REFERENT_COUNT;
+extern Referent g_AllReferents[];
 
 ReferentHandle RegisterReferent(Referent* referent);
 const Referent* GetReferent(ReferentHandle handle);
+void MakeSomeItems();
