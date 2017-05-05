@@ -9,6 +9,7 @@
 #include "utility.h"
 #include "items.h"
 #include "room.h"
+#include "state.h"
 
 static bool s_CommandsRegistered[kCommandCount];
 static Command s_AllCommands[kCommandCount];
@@ -82,6 +83,12 @@ void ExecuteMoveCommand(const Command* this, Referent* subject, Referent* object
     }
 }
 
+void ExecuteQuitCommand(const Command* this, Referent* subject, Referent* object)
+{
+    printf("Goodbye.\n");
+    SetProgramRunningMode(kQuitting);
+}
+
 #define LIST_VERBS( cmd, ... ) \
 static const char* cmd##Verbs[] = { __VA_ARGS__ }; \
 cmd.verbs = cmd##Verbs; \
@@ -104,7 +111,11 @@ void RegisterCommands() {
     moveCommand.execFunction = ExecuteMoveCommand;
     RegisterCommand(kCommandMove, &moveCommand);
 
-
+    Command quitCommand;
+    LIST_VERBS(quitCommand, "quit", "exit");
+    quitCommand.parseFlags = kParseFlagImplicitObject;
+    quitCommand.execFunction = ExecuteQuitCommand;
+    RegisterCommand(kCommandQuit, &quitCommand);
 
 
 }

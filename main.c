@@ -4,8 +4,7 @@
 #include "room.h"
 #include "parse.h"
 #include "IndexVector.h"
-
-bool g_StillAlive = true;
+#include "state.h"
 
 void CreateTwoRooms()
 {
@@ -63,7 +62,7 @@ int main(int argc, char **args)
     char commandString[256] = "Fake Command!";
     PrintArrivalGreeting(kDefaultRoom);
 
-    while (!IsQuitCommand(commandString) && g_StillAlive)
+    while (GetProgramRunningMode() == kInProgress)
     {
         printf("> ");
         fflush(stdout);
