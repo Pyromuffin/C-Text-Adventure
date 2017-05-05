@@ -8,7 +8,7 @@
 
 typedef enum ProgramRunningMode
 {
-    kInProgress,
+    kPlaying,
     kQuitting,
 } ProgramRunningMode;
 
