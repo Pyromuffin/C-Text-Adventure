@@ -8,26 +8,39 @@
 
 const uint MAX_REFERENT_COUNT = 10000;
 
-static Referent s_AllReferents[MAX_REFERENT_COUNT];
+Referent g_AllReferents[MAX_REFERENT_COUNT];
 static ReferentHandle s_NextReferentIndex = 0;
 static ReferentHandle s_RoomHandles[kRoomCount];
 
 ReferentHandle RegisterReferent(Referent *referent) {
     ReferentHandle handle = s_NextReferentIndex;
-    s_AllReferents[handle] = *referent;
+    g_AllReferents[handle] = *referent;
     s_NextReferentIndex++;
     return handle;
 }
 
 const Referent* GetReferent(ReferentHandle handle)
 {
-    return &s_AllReferents[handle];
+    return &g_AllReferents[handle];
 }
+
+#define LIST_NAMES( var, ... ) \
+static char* var##Names[] = { __VA_ARGS__ }; \
+var.names = var##Names; \
+var.nameCount = ARRAY_COUNT(var##Names)
 
 void MakeSomeItems()
 {
+    Referent nvidia;
+    LIST_NAMES(nvidia, "Nvidia");
+    RegisterReferent(&nvidia);
 
+    Referent flavorBlast;
+    LIST_NAMES(flavorBlast, "Flavor Blast");
+    RegisterReferent(&flavorBlast);
 
-
+    Referent beth;
+    LIST_NAMES(beth, "Beth");
+    RegisterReferent(&beth);
 }
 

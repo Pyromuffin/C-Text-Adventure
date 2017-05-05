@@ -2,9 +2,12 @@
 // Created by Kelly MacNeill on 4/30/17.
 //
 #include <string.h>
+#include <printf.h>
 
 #include "parse.h"
 #include "utility.h"
+#include "IndexVector.h"
+#include "items.h"
 
 bool IsQuitCommand(char* command)
 {
@@ -60,6 +63,11 @@ CommandLabel FindVerb( char* commandString )
     return kCommandInvalid;
 }
 
+IndexVector* FindReferents(char* commandString, IndexVector* potentialSet)
+{
+    //@todo implement me!
+    return NULL;
+}
 
 ParseResult ParseCommand(char* commandString)
 {
@@ -75,7 +83,6 @@ ParseResult ParseCommand(char* commandString)
         result.valid = true;
 
     }
-
 
     return result;
 }
