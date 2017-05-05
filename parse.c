@@ -81,7 +81,7 @@ ParseResult ParseCommand(char* commandString)
     {
         const Command* command = GetCommand(verb);
         result.valid = true;
-
+        result.commandLabel = verb;
     }
 
     return result;
