@@ -82,7 +82,7 @@ int main(int argc, char **args)
         }
         else
         {
-            printf("I don't know what is going on.\n");
+            printf("What's that !?\n");
         }
     }
 
