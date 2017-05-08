@@ -42,3 +42,4 @@ typedef struct Command
 void RegisterCommands();
 void RegisterCommand(CommandLabel label, Command* command);
 const Command* GetCommand(CommandLabel label);
+bool IsAcceptableReferentCount(ParseFlags flags, int referentCount);

@@ -12,6 +12,11 @@ Referent g_AllReferents[MAX_REFERENT_COUNT];
 static ReferentHandle s_NextReferentIndex = 0;
 static ReferentHandle s_RoomHandles[kRoomCount];
 
+int GetTotalReferentCount()
+{
+    return s_NextReferentIndex;
+}
+
 ReferentHandle RegisterReferent(Referent *referent) {
     ReferentHandle handle = s_NextReferentIndex;
     g_AllReferents[handle] = *referent;

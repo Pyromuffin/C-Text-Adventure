@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <memory.h>
 
 #include "room.h"
 #include "parse.h"
@@ -46,7 +47,6 @@ void Init()
     RegisterCommands();
 
     CreateTwoRooms();
-    VectorTest();
     MakeSomeItems();
 }
 

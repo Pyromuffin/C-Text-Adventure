@@ -22,6 +22,28 @@ void RegisterCommand(CommandLabel label, Command* command)
     s_CommandsRegistered[label] = true;
 }
 
+bool IsAcceptableReferentCount(ParseFlags flags, int referentCount)
+{
+    if(referentCount == 0)
+    {
+        return flags & kParseFlagImplicitObject;
+    }
+
+    if(referentCount == 1)
+    {
+        return flags & kParseFlagExplicitObject;
+    }
+
+    if(referentCount == 2)
+    {
+        return flags & kParseFlagSubjectAndObject;
+    }
+
+    return false; // too many referents ?
+}
+
+
+
 void ExecuteLookCommand(const Command* this, Referent* subject, Referent* object)
 {
     if( object && (object->type & kReferentItem) )
