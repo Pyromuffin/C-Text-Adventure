@@ -74,16 +74,20 @@ DynamicIndexArray* TokenizeString(char* inputString)
 
 CommandLabel FindVerb(TokenString tokenString)
 {
-    for(int i = 0; i < kCommandCount; i ++)
+    CommandLabel label = kCommandInvalid;
+    DynamicIndexArray* availableCommands = getAvailableCommands();
+
+    ITERATE_VECTOR(command, availableCommands, g_AllCommands)
     {
-        const Command* command = GetCommand((CommandLabel)i);
         if(TokensAreAnyOfTheseWords(tokenString, command->verbs, command->verbCount))
         {
-          return (CommandLabel)i;
+            label = (CommandLabel)(command - &g_AllCommands[0]);
+            break;
         }
     }
 
-    return kCommandInvalid;
+    FreeIndexVector(availableCommands);
+    return label;
 }
 
 

@@ -6,6 +6,7 @@
 
 typedef struct Referent Referent;
 typedef struct Command Command;
+typedef struct IndexVector DynamicIndexArray;
 
 typedef bool (*ParseFunction)(char*);
 typedef void (*CommandExecFunction)(const Command*, Referent*, Referent*);
@@ -17,7 +18,8 @@ typedef enum CommandLabel
     kCommandQuit,
     kCommandTake,
     kCommandMove,
-
+    kCommandYes,
+    kCommandNo,
     kCommandCount,
     kCommandInvalid = -1,
 } CommandLabel;
@@ -38,7 +40,9 @@ typedef struct Command
     ParseFlags parseFlags;
 } Command;
 
+extern Command g_AllCommands[];
 
+DynamicIndexArray* getAvailableCommands();
 void RegisterCommands();
 void RegisterCommand(CommandLabel label, Command* command);
 const Command* GetCommand(CommandLabel label);

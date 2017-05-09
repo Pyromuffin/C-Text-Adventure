@@ -10,6 +10,7 @@ typedef enum ProgramRunningMode
 {
     kPlaying,
     kQuitting,
+    kDead,
 } ProgramRunningMode;
 
 typedef struct ProgramState

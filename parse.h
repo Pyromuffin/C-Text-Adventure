@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "commands.h"
 #include "items.h"
+#include "IndexVector.h"
 
 // the result of a parse should be a verb and optionally a subject and/or object
 

@@ -5,20 +5,40 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <printf.h>
+#include <stdbool.h>
 #include "commands.h"
 #include "utility.h"
 #include "items.h"
 #include "room.h"
 #include "state.h"
+#include "IndexVector.h"
 
 static bool s_CommandsRegistered[kCommandCount];
-static Command s_AllCommands[kCommandCount];
+Command g_AllCommands[kCommandCount];
+
+DynamicIndexArray* getAvailableCommands()
+{
+    DynamicIndexArray* commands = AllocateIndexVector(kCommandCount, "AvailableCommands");
+    if (GetProgramRunningMode() == kDead) {
+        PushIndex(commands, kCommandYes);
+        PushIndex(commands, kCommandNo);
+    }
+    else if (GetProgramRunningMode() == kPlaying)
+    {
+        PushIndex(commands, kCommandLook);
+        PushIndex(commands, kCommandMove);
+        PushIndex(commands, kCommandQuit);
+        PushIndex(commands, kCommandTake);
+        PushIndex(commands, kCommandDie);
+    }
+    return commands;
+}
 
 void RegisterCommand(CommandLabel label, Command* command)
 {
     assert(!s_CommandsRegistered[label]);
     assert(command);
-    s_AllCommands[label] = *command;
+    g_AllCommands[label] = *command;
     s_CommandsRegistered[label] = true;
 }
 
@@ -111,6 +131,22 @@ void ExecuteQuitCommand(const Command* this, Referent* subject, Referent* object
     SetProgramRunningMode(kQuitting);
 }
 
+void ExecuteDieCommand(const Command* this, Referent* subject, Referent* object)
+{
+    SetProgramRunningMode(kDead);
+    printf("You have died.\nOh well. Would you like to start a new game? (y/n)\n");
+}
+
+void ExecuteYesCommand(const Command* this, Referent* subject, Referent* object)
+{
+    SetProgramRunningMode(kPlaying);
+}
+
+void ExecuteNoCommand(const Command* this, Referent* subject, Referent* object)
+{
+    ExecuteQuitCommand(NULL, NULL, NULL);
+}
+
 #define LIST_VERBS( cmd, ... ) \
 static const char* cmd##Verbs[] = { __VA_ARGS__ }; \
 cmd.verbs = cmd##Verbs; \
@@ -139,11 +175,29 @@ void RegisterCommands() {
     quitCommand.execFunction = ExecuteQuitCommand;
     RegisterCommand(kCommandQuit, &quitCommand);
 
+    Command dieCommand;
+    LIST_VERBS(dieCommand, "die");
+    dieCommand.parseFlags = kParseFlagImplicitObject;
+    dieCommand.execFunction = ExecuteDieCommand;
+    RegisterCommand(kCommandDie, &dieCommand);
+
+    Command yesCommand;
+    LIST_VERBS(yesCommand, "y", "yes");
+    yesCommand.parseFlags = kParseFlagImplicitObject;
+    yesCommand.execFunction = ExecuteYesCommand;
+    RegisterCommand(kCommandYes, &yesCommand);
+
+    Command noCommand;
+    LIST_VERBS(noCommand, "n", "no");
+    noCommand.parseFlags = kParseFlagImplicitObject;
+    noCommand.execFunction = ExecuteNoCommand;
+    RegisterCommand(kCommandNo, &noCommand);
+
 
 }
 
 const Command *GetCommand(CommandLabel label)
 {
-    return &s_AllCommands[label];
+    return &g_AllCommands[label];
 }
 

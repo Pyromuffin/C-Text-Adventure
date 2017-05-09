@@ -60,7 +60,7 @@ int main(int argc, char **args)
     char commandString[256] = "Fake Command!";
     PrintArrivalGreeting(kDefaultRoom);
 
-    while (GetProgramRunningMode() == kPlaying)
+    while (GetProgramRunningMode() == kPlaying || GetProgramRunningMode() == kDead)
     {
         printf("> ");
         fflush(stdout);
