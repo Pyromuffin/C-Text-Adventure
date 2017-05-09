@@ -14,25 +14,25 @@ typedef struct IndexVector
     uint capacity;
     uint length;
     char* name;
-}IndexVector;
+}DynamicIndexArray;
 
 #define MAKE_STATIC_VECTOR(name, capacity)\
 static IndexType name##Storage[capacity];\
-static IndexVector name = {&name##Storage[0], capacity, 0 };
+static DynamicIndexArray name = {&name##Storage[0], capacity, 0 };
 
 #define ITERATE_VECTOR(iteratorName, vector, array) \
 for(typeof(&array[0]) iteratorName = (vector->length) ? &array[vector->handles[0]] : NULL, iteratorName##_i = &array[0]; \
 (iteratorName##_i - (&array[0])) < vector->length; \
 (iteratorName##_i = iteratorName##_i + 1), (iteratorName = &array[vector->handles[(iteratorName##_i - (&array[0]))]] ) )
 
-IndexVector* AllocateIndexVector(uint capacity, char* name);
-void FreeIndexVector(IndexVector* vector);
+DynamicIndexArray* AllocateIndexVector(uint capacity, char* name);
+void FreeIndexVector(DynamicIndexArray* vector);
 
-void PushIndex(IndexVector *this, IndexType index);
-void PushIndexStatic(IndexVector *this, IndexType handle);
-IndexType PopIndex(IndexVector *this);
+void PushIndex(DynamicIndexArray *this, IndexType index);
+void PushIndexStatic(DynamicIndexArray *this, IndexType handle);
+IndexType PopIndex(DynamicIndexArray *this);
 
-void ResizeVector( IndexVector* this, uint newCapacity );
+void ResizeVector( DynamicIndexArray* this, uint newCapacity );
 
 void InitVectorTracking();
 void CheckForVectorLeaks();

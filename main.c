@@ -5,18 +5,18 @@
 #include "room.h"
 #include "parse.h"
 #include "IndexVector.h"
-#include "state.h"
+#include "state.h"go
 
 void CreateTwoRooms()
 {
     CreateSingleRoom(
             kBethsRoom,
-            "Beth's Room",
+            "beths",
             "This is a nice room. No cats allowed!");
 
     CreateSingleRoom(
             kLivingRoom,
-            "The Living Room",
+            "living",
             "Covered in cat hair. Constant beeping.");
 
     ConnectRoomsTogether(kBethsRoom, kLivingRoom, kSouth);
@@ -24,7 +24,7 @@ void CreateTwoRooms()
 
 void VectorTest()
 {
-    IndexVector* v = AllocateIndexVector(1, "test 1");
+    DynamicIndexArray* v = AllocateIndexVector(1, "test 1");
     PushIndex(v, 10);
 
     PushIndex(v, 11);
@@ -32,12 +32,9 @@ void VectorTest()
     PushIndex(v, 13);
     PushIndex(v, 14);
 
-    IndexVector* potato = AllocateIndexVector(100, "Test 2");
-
+    DynamicIndexArray* potato = AllocateIndexVector(100, "Test 2");
     FreeIndexVector(v);
-
     FreeIndexVector(potato);
-
 }
 
 
@@ -48,6 +45,7 @@ void Init()
 
     CreateTwoRooms();
     MakeSomeItems();
+    MakeRoomReferents();
 }
 
 void CleanUp()

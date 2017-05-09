@@ -11,7 +11,7 @@
 
 typedef struct TokenString
 {
-    IndexVector* tokenIndices;
+    DynamicIndexArray* tokenIndices;
     char* tokenizedString;
 } TokenString;
 
@@ -50,29 +50,12 @@ static bool TokensAreAnyOfTheseWords(TokenString tokenString, const char** wordL
         }
     }
 
-
-    typedef struct anon
-    {
-        int i;
-        int j;
-    } anon;
-
-    for( anon i; i.j < 0; i.j ++ )
-    {
-        i.i++;
-    }
-
-#undef anon
-
-
-
     return false;
 }
 
-
-IndexVector* TokenizeString(char* inputString)
+DynamicIndexArray* TokenizeString(char* inputString)
 {
-    IndexVector* tokens =  AllocateIndexVector(8, "Token Vector");
+    DynamicIndexArray* tokens =  AllocateIndexVector(8, "Token Vector");
     int length = strlen(inputString);
 
     // better hope that this is a trimmed string.
@@ -108,7 +91,7 @@ CommandLabel FindVerb(TokenString tokenString)
 
 MAKE_STATIC_VECTOR(s_FoundReferents, 2);
 
-IndexVector* FindReferents(TokenString tokenString, IndexVector* potentialSet)
+DynamicIndexArray* FindReferents(TokenString tokenString, DynamicIndexArray* potentialSet)
 {
     // for now just find the first two referents.
     // if two tokens, then the first is subject, second is object.
@@ -135,7 +118,7 @@ IndexVector* FindReferents(TokenString tokenString, IndexVector* potentialSet)
 }
 
 
-IndexVector* GetAvailableReferents()
+DynamicIndexArray* GetAvailableReferents()
 {
     // for now, just search allllll referents.
     // eventually this needs to do the following:
@@ -143,7 +126,15 @@ IndexVector* GetAvailableReferents()
     // referents in inventory
     // global or special referents
     // referents to adjacent rooms
-    return NULL;
+
+    DynamicIndexArray* referents = AllocateIndexVector(GetTotalReferentCount(), "All Referents" );
+
+    for(int i =0; i < GetTotalReferentCount(); i ++)
+    {
+        PushIndexStatic(referents, (IndexType)i);
+    }
+
+    return referents;
 }
 
 
@@ -157,7 +148,7 @@ ParseResult ParseCommand(char* commandString)
     char commandCopy[256];
     strncpy(commandCopy, commandString, 256);
 
-    IndexVector* tokens = TokenizeString(commandCopy);
+    DynamicIndexArray* tokens = TokenizeString(commandCopy);
     TokenString tokenString = {tokens, commandCopy};
 
     CommandLabel verb = FindVerb(tokenString);
@@ -170,9 +161,9 @@ ParseResult ParseCommand(char* commandString)
         // if the command needs referents.
         if(command->parseFlags & (kParseFlagExplicitObject | kParseFlagSubjectAndObject))
         {
-            IndexVector* availableReferents = GetAvailableReferents();
-            IndexVector* foundReferents = FindReferents(tokenString, availableReferents);
-            if(IsAcceptableReferentCount(command->parseFlags, foundReferents->length))
+            DynamicIndexArray* availableReferents = GetAvailableReferents();
+            DynamicIndexArray* foundReferents = FindReferents(tokenString, availableReferents);
+            if(!IsAcceptableReferentCount(command->parseFlags, foundReferents->length))
             {
                 result.valid = false;
             }

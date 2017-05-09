@@ -33,7 +33,7 @@ typedef struct Item
 typedef struct Referent
 {
     ReferentType type;
-    char** names;
+    const char** names;
     uint nameCount;
 
     union
@@ -49,4 +49,6 @@ extern Referent g_AllReferents[];
 
 ReferentHandle RegisterReferent(Referent* referent);
 const Referent* GetReferent(ReferentHandle handle);
+int GetTotalReferentCount();
+void MakeRoomReferents();
 void MakeSomeItems();

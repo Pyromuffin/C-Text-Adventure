@@ -27,8 +27,8 @@ typedef enum RoomLabel
 
 typedef struct Room
 {
-  char* roomName;
-  char* roomDescription;
+  const char* roomName;
+  const char* roomDescription;
   RoomLabel connectedRooms[kDirectionCount];
   bool visited;
 

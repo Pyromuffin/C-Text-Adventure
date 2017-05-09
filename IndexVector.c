@@ -9,17 +9,17 @@
 
 static const uint MAX_VECTORS = 100;
 
-static IndexVector s_AllVectors[MAX_VECTORS]; // this is only for tracking purposes, to make sure we're not leaking.
+static DynamicIndexArray s_AllVectors[MAX_VECTORS]; // this is only for tracking purposes, to make sure we're not leaking.
 MAKE_STATIC_VECTOR(s_FreeList, MAX_VECTORS);
 
-void PushIndexStatic(IndexVector *this, IndexType handle) {
+void PushIndexStatic(DynamicIndexArray *this, IndexType handle) {
     assert(this->length <  this->capacity);
     assert(this->capacity > 0);
     this->handles[this->length] = handle;
     this->length++;
 }
 
-void ResizeVector( IndexVector* this, uint newCapacity )
+void ResizeVector( DynamicIndexArray* this, uint newCapacity )
 {
     //printf("Resizing vector from %d to %d, length %d\n", this->capacity, newCapacity, this->length);
     //@todo perhaps consider the ability to get smaller.
@@ -36,7 +36,7 @@ void ResizeVector( IndexVector* this, uint newCapacity )
     this->handles = newStorage;
 }
 
-void PushIndex(IndexVector *this, IndexType index)
+void PushIndex(DynamicIndexArray *this, IndexType index)
 {
     if( this->capacity <= this->length )
     {
@@ -47,7 +47,7 @@ void PushIndex(IndexVector *this, IndexType index)
     this->length++;
 }
 
-IndexType PopIndex(IndexVector *this)
+IndexType PopIndex(DynamicIndexArray *this)
 {
     assert(this->length > 0);
     assert(this->capacity > 0);
@@ -55,10 +55,10 @@ IndexType PopIndex(IndexVector *this)
     return this->handles[this->length];
 }
 
-IndexVector* AllocateIndexVector(uint capacity, char* name)
+DynamicIndexArray* AllocateIndexVector(uint capacity, char* name)
 {
     IndexType freeVector = PopIndex(&s_FreeList);
-    IndexVector* vector = &s_AllVectors[freeVector];
+    DynamicIndexArray* vector = &s_AllVectors[freeVector];
     vector->name = name;
     assert(vector->capacity == 0);
     ResizeVector(vector, capacity);
@@ -68,7 +68,7 @@ IndexVector* AllocateIndexVector(uint capacity, char* name)
     return vector;
 }
 
-void FreeIndexVector(IndexVector* vector)
+void FreeIndexVector(DynamicIndexArray* vector)
 {
     assert(vector->handles);
     assert(vector->capacity > 0);

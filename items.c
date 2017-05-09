@@ -30,7 +30,7 @@ const Referent* GetReferent(ReferentHandle handle)
 }
 
 #define LIST_NAMES( var, ... ) \
-static char* var##Names[] = { __VA_ARGS__ }; \
+static const char* var##Names[] = { __VA_ARGS__ }; \
 var.names = var##Names; \
 var.nameCount = ARRAY_COUNT(var##Names)
 
@@ -47,5 +47,42 @@ void MakeSomeItems()
     Referent beth;
     LIST_NAMES(beth, "Beth");
     RegisterReferent(&beth);
+
 }
 
+void MakeRoomReferent(RoomLabel label)
+{
+    Room* room = GetRoomPtr(label);
+    Referent roomReferent;
+    roomReferent.type = kReferentRoom;
+    roomReferent.names = &room->roomName;
+    roomReferent.nameCount = 1;
+    roomReferent.room = label;
+    RegisterReferent( &roomReferent);
+}
+
+void MakeRoomReferents()
+{
+    for(int i = 0; i < kRoomCount; i++)
+    {
+        MakeRoomReferent((RoomLabel)i);
+    }
+}
+
+void MakeDirectionReferent(Direction dir)
+{
+   // Referent directionReferent;
+   // roomReferent.type = kReferentDirection;
+   // roomReferent.names = &GetDirectionString(dir);
+   // roomReferent.nameCount = 1;
+   // roomReferent.room = label;
+   // RegisterReferent( &roomReferent);
+}
+
+void MakeDirectionReferents()
+{
+    for(int i = 0; i < kDirectionCount; i++)
+    {
+        MakeDirectionReferent((Direction)i);
+    }
+}
