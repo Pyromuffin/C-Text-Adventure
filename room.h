@@ -21,7 +21,7 @@ typedef enum RoomLabel
   kRoomCount,
 // special room labels here
   kDefaultRoom = kBethsRoom,
-  kNoRoom,
+  kNoRoom = -1,
 
 } RoomLabel;
 
@@ -48,4 +48,4 @@ void MoveToRoom( RoomLabel label);
 Referent* GetReferentsInRoom( RoomLabel label );
 void PrintArrivalGreeting( RoomLabel label );
 void PrintRoomDescription( RoomLabel label );
-const char* GetDirectionString(Direction dir);
+const char** GetDirectionStrings(Direction dir);

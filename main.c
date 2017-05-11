@@ -5,7 +5,7 @@
 #include "room.h"
 #include "parse.h"
 #include "IndexVector.h"
-#include "state.h"go
+#include "state.h"
 
 void CreateTwoRooms()
 {
@@ -46,6 +46,7 @@ void Init()
     CreateTwoRooms();
     MakeSomeItems();
     MakeRoomReferents();
+    MakeDirectionReferents();
 }
 
 void CleanUp()

@@ -89,7 +89,7 @@ void ExecuteMoveDirection(Direction dir)
     }
     else
     {
-        printf("I can't go %s.\n", GetDirectionString(dir));
+        printf("I can't go %s.\n", GetDirectionStrings(dir)[0]);
     }
 }
 

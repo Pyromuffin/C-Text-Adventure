@@ -51,4 +51,5 @@ ReferentHandle RegisterReferent(Referent* referent);
 const Referent* GetReferent(ReferentHandle handle);
 int GetTotalReferentCount();
 void MakeRoomReferents();
+void MakeDirectionReferents();
 void MakeSomeItems();

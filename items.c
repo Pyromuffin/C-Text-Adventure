@@ -71,12 +71,12 @@ void MakeRoomReferents()
 
 void MakeDirectionReferent(Direction dir)
 {
-   // Referent directionReferent;
-   // roomReferent.type = kReferentDirection;
-   // roomReferent.names = &GetDirectionString(dir);
-   // roomReferent.nameCount = 1;
-   // roomReferent.room = label;
-   // RegisterReferent( &roomReferent);
+    Referent directionReferent;
+    directionReferent.type = kReferentDirection;
+    directionReferent.names = GetDirectionStrings(dir);
+    directionReferent.nameCount = 1;
+    directionReferent.direction = dir;
+    RegisterReferent( &directionReferent);
 }
 
 void MakeDirectionReferents()

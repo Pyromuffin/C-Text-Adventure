@@ -5,12 +5,12 @@
 Room g_AllTheRooms[kRoomCount];
 RoomLabel g_CurrentRoom = kDefaultRoom;
 
-const char* s_DirectionStrings[kDirectionCount] =
+static const char* s_DirectionStrings[][kDirectionCount] =
 {
-    "north",
-    "west",
-    "south",
-    "east",
+        {"north"},
+        {"west"},
+        {"south"},
+        {"east"},
 };
 
 Room* GetCurrentRoom()
@@ -89,7 +89,7 @@ void PrintArrivalGreeting( RoomLabel label )
     room->visited = true;
 }
 
-const char *GetDirectionString(Direction dir)
+const char **GetDirectionStrings(Direction dir)
 {
      return s_DirectionStrings[dir];
 }
