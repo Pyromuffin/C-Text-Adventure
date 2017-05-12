@@ -27,27 +27,80 @@ bool IsDieCommand(char* command)
 
 }
 
-static bool TokenIsAnyOfTheseWords(char* token, const char** wordList, int wordCount )
+static int CountWords(const char* string)
 {
+    int wordCount = 1;
+
+    int length = strlen(string);
+    for(int i =0; i < length; i++)
+    {
+        if(string[i] == ' ')
+            wordCount++;
+    }
+
+    return wordCount;
+}
+
+bool GetNextNTokensAsString(TokenString tokenString, IndexType currentTokenIndex, int additionalTokenCount, char* dst)
+{
+    if(additionalTokenCount > (tokenString.tokenIndices->length - currentTokenIndex))
+    {
+        return false;
+    }
+
+    char* token = &tokenString.tokenizedString[tokenString.tokenIndices->handles[currentTokenIndex]];
+    strcpy(dst, token);
+
+    for(int i = 1; i < additionalTokenCount + 1; i++)
+    {
+        char* substring = &tokenString.tokenizedString[tokenString.tokenIndices->handles[currentTokenIndex + i] ];
+        sprintf(dst, "%s %s", dst, substring);
+    }
+
+    return true;
+}
+
+
+static bool TokenIsAnyOfTheseWords(char* token, const char** wordList, int wordCount,
+                                   TokenString tokenString, IndexType tokenIndex)
+{
+    char temp[256];
     for( int i = 0; i < wordCount; i ++ )
     {
-        if(!strcmp(token, wordList[i]))
-            return true;
+        temp[0] = '\0';
+        const char* word = wordList[i];
+        int numberOfWordsInString = CountWords(word);
+        if(numberOfWordsInString > 1)
+        {
+            bool enough = GetNextNTokensAsString(tokenString, tokenIndex, numberOfWordsInString - 1, temp);
+            if(!enough)
+                continue;
+
+            if(!strcmp(temp, wordList[i]))
+                return true;
+        }
+        else
+        {
+            if(!strcmp(token, wordList[i]))
+                return true;
+        }
     }
 
     return false;
 }
 
-
 static bool TokensAreAnyOfTheseWords(TokenString tokenString, const char** wordList, int wordCount)
 {
     // this is probably the slowest way to do this.
+    IndexType tokenIndex = 0;
     ITERATE_VECTOR(token, tokenString.tokenIndices, tokenString.tokenizedString)
     {
-        if(TokenIsAnyOfTheseWords(token, wordList, wordCount))
+        if(TokenIsAnyOfTheseWords(token, wordList, wordCount, tokenString, tokenIndex))
         {
             return true;
         }
+
+        tokenIndex++;
     }
 
     return false;
@@ -72,6 +125,9 @@ DynamicIndexArray* TokenizeString(char* inputString)
     return tokens;
 }
 
+
+
+
 CommandLabel FindVerb(TokenString tokenString)
 {
     CommandLabel label = kCommandInvalid;
@@ -81,7 +137,7 @@ CommandLabel FindVerb(TokenString tokenString)
     {
         if(TokensAreAnyOfTheseWords(tokenString, command->verbs, command->verbCount))
         {
-            label = (CommandLabel)(command - &g_AllCommands[0]);
+            label = (CommandLabel)(command - g_AllCommands);
             break;
         }
     }
@@ -90,31 +146,26 @@ CommandLabel FindVerb(TokenString tokenString)
     return label;
 }
 
-
-
-
 MAKE_STATIC_VECTOR(s_FoundReferents, 2);
-
 DynamicIndexArray* FindReferents(TokenString tokenString, DynamicIndexArray* potentialSet)
 {
     // for now just find the first two referents.
     // if two tokens, then the first is subject, second is object.
     // if one token then it's just the object.
     s_FoundReferents.length = 0;
+    IndexType tokenIndex = 0;
     ITERATE_VECTOR(token, tokenString.tokenIndices, tokenString.tokenizedString)
     {
-        int referentIndex = 0;
         ITERATE_VECTOR(referent, potentialSet, g_AllReferents)
         {
-            if( TokenIsAnyOfTheseWords(token, referent->names, referent->nameCount))
+            if(TokenIsAnyOfTheseWords(token, referent->names, referent->nameCount, tokenString, tokenIndex))
             {
-                PushIndexStatic(&s_FoundReferents, potentialSet->handles[referentIndex]);
-
+                PushIndexStatic(&s_FoundReferents, (IndexType)(referent - g_AllReferents));
                 if( s_FoundReferents.length  == 2)
                     goto badTime;
             }
-            referentIndex++;
         }
+        tokenIndex++;
     }
 
     badTime:

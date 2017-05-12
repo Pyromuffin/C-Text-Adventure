@@ -11,12 +11,12 @@ void CreateTwoRooms()
 {
     CreateSingleRoom(
             kBethsRoom,
-            "beths",
+            "beth's room",
             "This is a nice room. No cats allowed!");
 
     CreateSingleRoom(
             kLivingRoom,
-            "living",
+            "the living room",
             "Covered in cat hair. Constant beeping.");
 
     ConnectRoomsTogether(kBethsRoom, kLivingRoom, kSouth);
