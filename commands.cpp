@@ -4,7 +4,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <printf.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include "commands.h"
 #include "utility.h"
@@ -64,7 +64,7 @@ bool IsAcceptableReferentCount(ParseFlags flags, int referentCount)
 
 
 
-void ExecuteLookCommand(const Command* this, Referent* subject, Referent* object)
+void ExecuteLookCommand(const Command* me, Referent* subject, Referent* object)
 {
     if( object && (object->type & kReferentItem) )
     {
@@ -110,7 +110,7 @@ void ExecuteMoveRoom(RoomLabel label)
     printf("I can't reach %s from here.\n", GetRoomPtr(label)->roomName);
 }
 
-void ExecuteMoveCommand(const Command* this, Referent* subject, Referent* object)
+void ExecuteMoveCommand(const Command* me, Referent* subject, Referent* object)
 {
     assert(object);
     assert(object->type & (kReferentDirection | kReferentRoom));
@@ -125,24 +125,24 @@ void ExecuteMoveCommand(const Command* this, Referent* subject, Referent* object
     }
 }
 
-void ExecuteQuitCommand(const Command* this, Referent* subject, Referent* object)
+void ExecuteQuitCommand(const Command* me, Referent* subject, Referent* object)
 {
     printf("Goodbye.\n");
     SetProgramRunningMode(kQuitting);
 }
 
-void ExecuteDieCommand(const Command* this, Referent* subject, Referent* object)
+void ExecuteDieCommand(const Command* me, Referent* subject, Referent* object)
 {
     SetProgramRunningMode(kDead);
     printf("You have died.\nOh well. Would you like to start a new game? (y/n)\n");
 }
 
-void ExecuteYesCommand(const Command* this, Referent* subject, Referent* object)
+void ExecuteYesCommand(const Command* me, Referent* subject, Referent* object)
 {
     SetProgramRunningMode(kPlaying);
 }
 
-void ExecuteNoCommand(const Command* this, Referent* subject, Referent* object)
+void ExecuteNoCommand(const Command* me, Referent* subject, Referent* object)
 {
     ExecuteQuitCommand(NULL, NULL, NULL);
 }
@@ -159,7 +159,7 @@ void RegisterCommands() {
     //static const char* lookVerbs[] = {  "look", "examine", "view", "describe" };
     //lookCommand.verbs = lookVerbs;
     //lookCommand.verbCount = ARRAY_COUNT(lookVerbs);
-    lookCommand.parseFlags = kParseFlagImplicitObject | kParseFlagExplicitObject;
+    lookCommand.parseFlags = (ParseFlags)(kParseFlagImplicitObject | kParseFlagExplicitObject);
     lookCommand.execFunction = ExecuteLookCommand;
     RegisterCommand(kCommandLook, &lookCommand);
 

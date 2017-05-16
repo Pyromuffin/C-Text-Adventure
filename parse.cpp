@@ -2,7 +2,7 @@
 // Created by Kelly MacNeill on 4/30/17.
 //
 #include <string.h>
-#include <printf.h>
+#include <stdio.h>
 
 #include "parse.h"
 #include "utility.h"
@@ -43,7 +43,7 @@ static int CountWords(const char* string)
 
 bool GetNextNTokensAsString(TokenString tokenString, IndexType currentTokenIndex, int additionalTokenCount, char* dst)
 {
-    if(additionalTokenCount > (tokenString.tokenIndices->length - currentTokenIndex))
+    if(additionalTokenCount >= (tokenString.tokenIndices->length - currentTokenIndex))
     {
         return false;
     }

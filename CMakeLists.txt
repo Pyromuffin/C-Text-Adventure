@@ -2,10 +2,11 @@ cmake_minimum_required(VERSION 3.7)
 project(C_Text_Adventure)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "-g2 -gdwarf-2 /Zi /potato")
 
 set(SOURCE_FILES
-        main.c
-        room.c
-        room.h parse.h parse.c commands.h commands.c items.h utility.h utility.c items.c IndexVector.h IndexVector.c state.c state.h)
+        main.cpp
+        room.cpp
+        room.h parse.h parse.cpp commands.h commands.cpp items.h utility.h utility.cpp items.cpp IndexVector.h IndexVector.cpp state.cpp state.h)
 
 add_executable(C_Text_Adventure ${SOURCE_FILES})

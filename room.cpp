@@ -1,5 +1,5 @@
 #include <assert.h>
-#include <printf.h>
+#include <stdio.h>
 #include "room.h"
 
 Room g_AllTheRooms[kRoomCount];
@@ -38,8 +38,9 @@ Direction GetOpposingDirection( Direction dir )
 
     case kDirectionCount:
       assert(false);
-      return kDirectionCount;
   }
+
+  return kDirectionCount;
 }
 
 void ConnectRoomsTogether(RoomLabel from, RoomLabel to, Direction dir)

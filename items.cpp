@@ -6,7 +6,7 @@
 #include "utility.h"
 #include "items.h"
 
-const uint MAX_REFERENT_COUNT = 10000;
+static const uint MAX_REFERENT_COUNT = 10000;
 
 Referent g_AllReferents[MAX_REFERENT_COUNT];
 static ReferentHandle s_NextReferentIndex = 0;
