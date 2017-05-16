@@ -15,23 +15,24 @@ typedef enum Direction
 
 typedef enum RoomLabel
 {
-  kBethsRoom,
-  kLivingRoom,
+    kBethsRoom,
+    kLivingRoom,
+    kKellysRoom,
 
-  kRoomCount,
-// special room labels here
-  kDefaultRoom = kBethsRoom,
-  kNoRoom = -1,
+    kRoomCount,
+    // special room labels here
+    kDefaultRoom = kBethsRoom,
+    kNoRoom = -1,
 
 } RoomLabel;
 
 typedef struct Room
 {
-  const char* roomName;
-  const char* roomDescription;
-  RoomLabel connectedRooms[kDirectionCount];
-  bool visited;
-
+    const char* roomName;
+    const char** identifiers;
+    const char* roomDescription;
+    RoomLabel connectedRooms[kDirectionCount];
+    bool visited;
 } Room;
 
 //extern RoomLabel g_CurrentRoom;

@@ -5,8 +5,10 @@
 
 #include "room.h"
 #include "utility.h"
+#include "StringHash.h"
 
 typedef uint ReferentHandle;
+
 
 typedef enum ItemFlags
 {
@@ -33,13 +35,14 @@ typedef struct Item
 typedef struct Referent
 {
     ReferentType type;
-    const char** names;
-    uint nameCount;
+    const char* shortName;
+    TokenString* identifiers;
+    uint identifierCount;
 
     union
     {
         Direction direction;
-        Item* item;
+        Item item;
         RoomLabel room;
     };
 } Referent;

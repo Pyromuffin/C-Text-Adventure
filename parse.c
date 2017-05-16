@@ -9,11 +9,7 @@
 #include "IndexVector.h"
 #include "items.h"
 
-typedef struct TokenString
-{
-    DynamicIndexArray* tokenIndices;
-    char* tokenizedString;
-} TokenString;
+
 
 
 bool IsLookCommand(char* command)
@@ -106,24 +102,7 @@ static bool TokensAreAnyOfTheseWords(TokenString tokenString, const char** wordL
     return false;
 }
 
-DynamicIndexArray* TokenizeString(char* inputString)
-{
-    DynamicIndexArray* tokens =  AllocateIndexVector(8, "Token Vector");
-    int length = strlen(inputString);
 
-    // better hope that this is a trimmed string.
-    PushIndex(tokens, 0);
-    for(int i = 0; i < length; i++)
-    {
-        if(inputString[i] == ' ')
-        {
-            PushIndex(tokens, i + 1u);
-            inputString[i] = '\0';
-        }
-    }
-
-    return tokens;
-}
 
 
 
