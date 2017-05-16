@@ -29,25 +29,54 @@ const Referent* GetReferent(ReferentHandle handle)
     return &g_AllReferents[handle];
 }
 
-#define LIST_NAMES( var, ... ) \
-static const char* var##Names[] = { __VA_ARGS__ }; \
-var.names = var##Names; \
-var.nameCount = ARRAY_COUNT(var##Names)
+
+
+void SetupIdentifierTokens(Referent* referent, char** identifiers)
+{
+    for(int i = 0; i < referent->identifierCount; i ++)
+    {
+        char* string = identifiers[i];
+        referent->identifiers[i] = AllocateTokenString(string, referent->shortName);
+    }
+}
+
+#define LIST_IDENTIFIERS( var, ... ) \
+static char* var##_identifiers[] = { __VA_ARGS__ }; \
+var.identifierCount = ARRAY_COUNT(var##_identifiers); \
+static TokenString var##_tokenStrings[ARRAY_COUNT(var##_identifiers)]; \
+SetupIdentifierTokens(&var, var##_identifiers)
 
 void MakeSomeItems()
 {
     Referent nvidia;
-    LIST_NAMES(nvidia, "Nvidia");
+    nvidia.type = kReferentItem;
+    nvidia.shortName = "Nvidia";
+
+    nvidia.item.description = "Nvidia geforce gtx titan x is the floop cat.\n"
+            "Found near rugs, she is usually inverted - exposing her soft underbelly.\n"
+            "She is a connoisseur of the inedible.\n"
+            "Sneeze rating: Standard.\n";
+
+    LIST_IDENTIFIERS(nvidia,
+                     "nvidia",
+                     "nv",
+                     "nvidia geforce gtx titan x",
+                     "floop cat",
+                     "cat");
+
     RegisterReferent(&nvidia);
 
     Referent flavorBlast;
-    LIST_NAMES(flavorBlast, "Flavor Blast");
+    flavorBlast.type = kReferentItem;
+    flavorBlast.shortName = "Flavor Blast";
+
+    flavorBlast.item.description = "Flavor Blast is the floof cat.\n"
+            "Barely smart enough to breathe, his primary function is to grow fur.\n"
+            "He has a secret itchy spot under his chin.\n"
+            "Sneeze rating: Severe.\n";
+
+    LIST_IDENTIFIERS(flavorBlast, "flavor blast", "flavor cat", "flavor butt", "floof cat", "cat");
     RegisterReferent(&flavorBlast);
-
-    Referent beth;
-    LIST_NAMES(beth, "Beth");
-    RegisterReferent(&beth);
-
 }
 
 void MakeRoomReferent(RoomLabel label)
@@ -55,7 +84,7 @@ void MakeRoomReferent(RoomLabel label)
     Room* room = GetRoomPtr(label);
     Referent roomReferent;
     roomReferent.type = kReferentRoom;
-    roomReferent.names = &room->roomName;
+    roomReferent.shortName = room->roomName;
     roomReferent.nameCount = 1;
     roomReferent.room = label;
     RegisterReferent( &roomReferent);
