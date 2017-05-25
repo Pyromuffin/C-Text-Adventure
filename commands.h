@@ -4,9 +4,10 @@
 #pragma once
 #include <stdbool.h>
 
-typedef struct Referent Referent;
-typedef struct Command Command;
-typedef struct IndexVector DynamicIndexArray;
+struct Command;
+struct Referent;
+struct DynamicIndexArray;
+struct TokenString;
 
 typedef bool (*ParseFunction)(char*);
 typedef void (*CommandExecFunction)(const Command*, Referent*, Referent*);
@@ -32,13 +33,13 @@ typedef enum ParseFlags
 
 }ParseFlags;
 
-typedef struct Command
+struct Command
 {
-    const char** verbs;
-    int verbCount;
+	TokenString *identifiers;
+    size_t identifierCount;
     CommandExecFunction execFunction;
     ParseFlags parseFlags;
-} Command;
+};
 
 extern Command g_AllCommands[];
 

@@ -55,7 +55,7 @@ IndexType PopIndex(DynamicIndexArray *me)
     return me->handles[me->length];
 }
 
-DynamicIndexArray* AllocateIndexVector(uint capacity, char* name)
+DynamicIndexArray* AllocateIndexVector(uint capacity, const char* name)
 {
     IndexType freeVector = PopIndex(&s_FreeList);
     DynamicIndexArray* vector = &s_AllVectors[freeVector];

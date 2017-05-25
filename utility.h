@@ -8,7 +8,6 @@
 #define ARRAY_COUNT(arr) (sizeof(arr) / sizeof(arr[0]))
 
 typedef unsigned int uint;
-typedef unsigned long int IntPtr;
 
 bool IsWhiteSpace(char c);
 void TrimSelf(char* input);

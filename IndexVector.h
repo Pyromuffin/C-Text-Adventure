@@ -4,17 +4,16 @@
 
 #pragma once
 #include "utility.h"
-#include "items.h"
 
 typedef uint IndexType;
 
-typedef struct IndexVector
+struct DynamicIndexArray
 {
     IndexType* handles;
     uint capacity;
     uint length;
-    char* name;
-}DynamicIndexArray;
+    const char* name;
+};
 
 #define MAKE_STATIC_VECTOR(name, capacity)\
 static IndexType name##Storage[capacity];\
@@ -25,7 +24,7 @@ for(decltype(&array[0]) iteratorName = (vector->length) ? &array[vector->handles
 (iteratorName##_i - (&array[0])) < vector->length; \
 (iteratorName##_i = iteratorName##_i + 1), (iteratorName = &array[vector->handles[(iteratorName##_i - (&array[0]))]] ) )
 
-DynamicIndexArray* AllocateIndexVector(uint capacity, char* name);
+DynamicIndexArray* AllocateIndexVector(uint capacity, const char* name);
 void FreeIndexVector(DynamicIndexArray* vector);
 
 void PushIndex(DynamicIndexArray *me, IndexType index);

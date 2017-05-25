@@ -9,7 +9,6 @@
 
 typedef uint ReferentHandle;
 
-
 typedef enum ItemFlags
 {
     ItemFlagUsable = 1 << 0,
@@ -34,25 +33,26 @@ typedef struct Item
 
 typedef struct Referent
 {
-    ReferentType type;
-    const char* shortName;
-    TokenString* identifiers;
-    uint identifierCount;
+	ReferentType type;
+	const char* shortName;
+	TokenString* identifiers;
+	uint identifierCount;
 
-    union
-    {
-        Direction direction;
-        Item item;
-        RoomLabel room;
-    };
+	union
+	{
+		enum Direction direction;
+		Item item;
+		enum RoomLabel room;
+	};
+
 } Referent;
 
 extern const uint MAX_REFERENT_COUNT;
 extern Referent g_AllReferents[];
 
+Referent* GetRoomReferent(enum RoomLabel label);
 ReferentHandle RegisterReferent(Referent* referent);
 const Referent* GetReferent(ReferentHandle handle);
 int GetTotalReferentCount();
-void MakeRoomReferents();
 void MakeDirectionReferents();
 void MakeSomeItems();

@@ -7,6 +7,6 @@ set(CMAKE_CXX_FLAGS "-g2 -gdwarf-2 /Zi /potato")
 set(SOURCE_FILES
         main.cpp
         room.cpp
-        room.h parse.h parse.cpp commands.h commands.cpp items.h utility.h utility.cpp items.cpp IndexVector.h IndexVector.cpp state.cpp state.h StringHash.c StringHash.h)
+        room.h parse.h parse.cpp commands.h commands.cpp items.h utility.h utility.cpp items.cpp IndexVector.h IndexVector.cpp state.cpp state.h StringHash.cpp StringHash.h CompileTimeStrings.h)
 
 add_executable(C_Text_Adventure ${SOURCE_FILES})

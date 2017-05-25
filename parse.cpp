@@ -23,131 +23,52 @@ bool IsDieCommand(char* command)
 
 }
 
-static int CountWords(const char* string)
-{
-    int wordCount = 1;
 
-    int length = strlen(string);
-    for(int i =0; i < length; i++)
-    {
-        if(string[i] == ' ')
-            wordCount++;
-    }
-
-    return wordCount;
-}
-
-bool GetNextNTokensAsString(TokenString tokenString, IndexType currentTokenIndex, int additionalTokenCount, char* dst)
-{
-    if(additionalTokenCount >= (tokenString.tokenIndices->length - currentTokenIndex))
-    {
-        return false;
-    }
-
-    char* token = &tokenString.tokenizedString[tokenString.tokenIndices->handles[currentTokenIndex]];
-    strcpy(dst, token);
-
-    for(int i = 1; i < additionalTokenCount + 1; i++)
-    {
-        char* substring = &tokenString.tokenizedString[tokenString.tokenIndices->handles[currentTokenIndex + i] ];
-        sprintf(dst, "%s %s", dst, substring);
-    }
-
-    return true;
-}
-
-
-static bool TokenIsAnyOfTheseWords(char* token, const char** wordList, int wordCount,
-                                   TokenString tokenString, IndexType tokenIndex)
-{
-    char temp[256];
-    for( int i = 0; i < wordCount; i ++ )
-    {
-        temp[0] = '\0';
-        const char* word = wordList[i];
-        int numberOfWordsInString = CountWords(word);
-        if(numberOfWordsInString > 1)
-        {
-            bool enough = GetNextNTokensAsString(tokenString, tokenIndex, numberOfWordsInString - 1, temp);
-            if(!enough)
-                continue;
-
-            if(!strcmp(temp, wordList[i]))
-                return true;
-        }
-        else
-        {
-            if(!strcmp(token, wordList[i]))
-                return true;
-        }
-    }
-
-    return false;
-}
-
-static bool TokensAreAnyOfTheseWords(TokenString tokenString, const char** wordList, int wordCount)
-{
-    // this is probably the slowest way to do this.
-    IndexType tokenIndex = 0;
-    ITERATE_VECTOR(token, tokenString.tokenIndices, tokenString.tokenizedString)
-    {
-        if(TokenIsAnyOfTheseWords(token, wordList, wordCount, tokenString, tokenIndex))
-        {
-            return true;
-        }
-
-        tokenIndex++;
-    }
-
-    return false;
-}
-
-
-
-
-
-
-CommandLabel FindVerb(TokenString tokenString)
+CommandLabel FindVerb(TokenString *inputString)
 {
     CommandLabel label = kCommandInvalid;
     DynamicIndexArray* availableCommands = getAvailableCommands();
 
     ITERATE_VECTOR(command, availableCommands, g_AllCommands)
     {
-        if(TokensAreAnyOfTheseWords(tokenString, command->verbs, command->verbCount))
-        {
-            label = (CommandLabel)(command - g_AllCommands);
-            break;
-        }
+		for (int i = 0; i < command->identifierCount; i++)
+		{
+			TokenString *verbTS = &command->identifiers[i];
+			if (inputString->HasSubstring(verbTS))
+			{
+				label = (CommandLabel)(command - g_AllCommands);
+				goto badtime;
+			}
+		}
     }
 
+badtime:
     FreeIndexVector(availableCommands);
     return label;
 }
 
 MAKE_STATIC_VECTOR(s_FoundReferents, 2);
-DynamicIndexArray* FindReferents(TokenString tokenString, DynamicIndexArray* potentialSet)
+DynamicIndexArray* FindReferents(TokenString* inputTokens, DynamicIndexArray* potentialSet)
 {
     // for now just find the first two referents.
     // if two tokens, then the first is subject, second is object.
     // if one token then it's just the object.
     s_FoundReferents.length = 0;
-    IndexType tokenIndex = 0;
-    ITERATE_VECTOR(token, tokenString.tokenIndices, tokenString.tokenizedString)
-    {
-        ITERATE_VECTOR(referent, potentialSet, g_AllReferents)
-        {
-            if(TokenIsAnyOfTheseWords(token, referent->names, referent->nameCount, tokenString, tokenIndex))
-            {
-                PushIndexStatic(&s_FoundReferents, (IndexType)(referent - g_AllReferents));
-                if( s_FoundReferents.length  == 2)
-                    goto badTime;
-            }
-        }
-        tokenIndex++;
-    }
 
-    badTime:
+	ITERATE_VECTOR(referent, potentialSet, g_AllReferents)
+	{
+		for (int identifierIndex = 0; identifierIndex < referent->identifierCount; identifierIndex++)
+		{
+			TokenString *identifier = &referent->identifiers[identifierIndex];
+			if(inputTokens->HasSubstring(identifier))
+			{
+				PushIndexStatic(&s_FoundReferents, referent - g_AllReferents);
+				if (s_FoundReferents.length == 2)
+					return &s_FoundReferents;
+			}
+		}
+	}
+   
     return &s_FoundReferents;
 }
 
@@ -179,13 +100,9 @@ ParseResult ParseCommand(char* commandString)
     result.subject = NULL;
     result.valid = false;
 
-    char commandCopy[256];
-    strncpy(commandCopy, commandString, 256);
+	std::unique_ptr<TokenString> inputTokens = AllocateTokenString(commandString);
+    CommandLabel verb = FindVerb(inputTokens.get());
 
-    DynamicIndexArray* tokens = TokenizeString(commandCopy);
-    TokenString tokenString = {tokens, commandCopy};
-
-    CommandLabel verb = FindVerb(tokenString);
     if( verb != kCommandInvalid )
     {
         const Command* command = GetCommand(verb);
@@ -196,7 +113,7 @@ ParseResult ParseCommand(char* commandString)
         if(command->parseFlags & (kParseFlagExplicitObject | kParseFlagSubjectAndObject))
         {
             DynamicIndexArray* availableReferents = GetAvailableReferents();
-            DynamicIndexArray* foundReferents = FindReferents(tokenString, availableReferents);
+            DynamicIndexArray* foundReferents = FindReferents(inputTokens.get(), availableReferents);
             if(!IsAcceptableReferentCount(command->parseFlags, foundReferents->length))
             {
                 result.valid = false;
@@ -218,6 +135,5 @@ ParseResult ParseCommand(char* commandString)
         }
     }
 
-    FreeIndexVector(tokens);
     return result;
 }

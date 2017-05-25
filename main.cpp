@@ -6,18 +6,26 @@
 #include "parse.h"
 #include "IndexVector.h"
 #include "state.h"
+#include "items.h"
+#include "CompileTimeStrings.h"
 
 void CreateTwoRooms()
 {
-    CreateSingleRoom(
-            kBethsRoom,
-            "beth's room",
-            "This is a nice room. No cats allowed!");
+	Referent bethsRoom;
+	bethsRoom.type = kReferentRoom;
+	bethsRoom.shortName = "Beth's room";
+	LIST_IDENTIFIERS(bethsRoom, "beth's room", "beths room");
+	bethsRoom.room = kBethsRoom;
+	GetRoomPtr(kBethsRoom)->description = "This is a nice room. No cats allowed!";
+	RegisterReferent(&bethsRoom);
 
-    CreateSingleRoom(
-            kLivingRoom,
-            "the living room",
-            "Covered in cat hair. Constant beeping.");
+	Referent livingRoom;
+	livingRoom.type = kReferentRoom;
+	livingRoom.shortName = "the living room";
+	LIST_IDENTIFIERS(livingRoom, "living room", "dying room", "super hyper room" );
+	livingRoom.room = kLivingRoom;
+	GetRoomPtr(kLivingRoom)->description = "Covered in cat hair. Constant beeping.";
+	RegisterReferent(&livingRoom);
 
     ConnectRoomsTogether(kBethsRoom, kLivingRoom, kSouth);
 }
@@ -45,7 +53,6 @@ void Init()
 
     CreateTwoRooms();
     MakeSomeItems();
-    MakeRoomReferents();
     MakeDirectionReferents();
 }
 

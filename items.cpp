@@ -5,6 +5,8 @@
 
 #include "utility.h"
 #include "items.h"
+#include "room.h"
+#include "CompileTimeStrings.h"
 
 static const uint MAX_REFERENT_COUNT = 10000;
 
@@ -21,6 +23,12 @@ ReferentHandle RegisterReferent(Referent *referent) {
     ReferentHandle handle = s_NextReferentIndex;
     g_AllReferents[handle] = *referent;
     s_NextReferentIndex++;
+
+	if (referent->type & kReferentRoom)
+	{
+		s_RoomHandles[referent->room] = handle;
+	}
+
     return handle;
 }
 
@@ -30,40 +38,18 @@ const Referent* GetReferent(ReferentHandle handle)
 }
 
 
-
-void SetupIdentifierTokens(Referent* referent, char** identifiers)
-{
-    for(int i = 0; i < referent->identifierCount; i ++)
-    {
-        char* string = identifiers[i];
-        referent->identifiers[i] = AllocateTokenString(string, referent->shortName);
-    }
-}
-
-#define LIST_IDENTIFIERS( var, ... ) \
-static char* var##_identifiers[] = { __VA_ARGS__ }; \
-var.identifierCount = ARRAY_COUNT(var##_identifiers); \
-static TokenString var##_tokenStrings[ARRAY_COUNT(var##_identifiers)]; \
-SetupIdentifierTokens(&var, var##_identifiers)
-
 void MakeSomeItems()
 {
-    Referent nvidia;
-    nvidia.type = kReferentItem;
-    nvidia.shortName = "Nvidia";
+	Referent nvidia;
+	nvidia.type = kReferentItem;
+	nvidia.shortName = "Nvidia";
 
-    nvidia.item.description = "Nvidia geforce gtx titan x is the floop cat.\n"
-            "Found near rugs, she is usually inverted - exposing her soft underbelly.\n"
-            "She is a connoisseur of the inedible.\n"
-            "Sneeze rating: Standard.\n";
+	nvidia.item.description = "Nvidia geforce gtx titan x is the floop cat.\n"
+		"Found near rugs, she is usually inverted - exposing her soft underbelly.\n"
+		"She is a connoisseur of the inedible.\n"
+		"Sneeze rating: Standard.\n";
 
-    LIST_IDENTIFIERS(nvidia,
-                     "nvidia",
-                     "nv",
-                     "nvidia geforce gtx titan x",
-                     "floop cat",
-                     "cat");
-
+	LIST_IDENTIFIERS(nvidia, "nvidia", "nv", "floop cat", "cat");
     RegisterReferent(&nvidia);
 
     Referent flavorBlast;
@@ -75,43 +61,51 @@ void MakeSomeItems()
             "He has a secret itchy spot under his chin.\n"
             "Sneeze rating: Severe.\n";
 
-    LIST_IDENTIFIERS(flavorBlast, "flavor blast", "flavor cat", "flavor butt", "floof cat", "cat");
+	LIST_IDENTIFIERS(flavorBlast, "flavor blast", "flavor cat", "flavor butt", "floof cat", "cat");
     RegisterReferent(&flavorBlast);
 }
 
-void MakeRoomReferent(RoomLabel label)
+Referent* GetRoomReferent(RoomLabel label)
 {
-    Room* room = GetRoomPtr(label);
-    Referent roomReferent;
-    roomReferent.type = kReferentRoom;
-    roomReferent.shortName = room->roomName;
-    roomReferent.nameCount = 1;
-    roomReferent.room = label;
-    RegisterReferent( &roomReferent);
+	return &g_AllReferents[s_RoomHandles[label]];
 }
 
-void MakeRoomReferents()
-{
-    for(int i = 0; i < kRoomCount; i++)
-    {
-        MakeRoomReferent((RoomLabel)i);
-    }
-}
-
-void MakeDirectionReferent(Direction dir)
-{
-    Referent directionReferent;
-    directionReferent.type = kReferentDirection;
-    directionReferent.names = GetDirectionStrings(dir);
-    directionReferent.nameCount = 1;
-    directionReferent.direction = dir;
-    RegisterReferent( &directionReferent);
-}
 
 void MakeDirectionReferents()
 {
-    for(int i = 0; i < kDirectionCount; i++)
-    {
-        MakeDirectionReferent((Direction)i);
-    }
+
+	Referent northReferent;
+	northReferent.type = kReferentDirection;
+	northReferent.shortName = "north";
+	LIST_IDENTIFIERS(northReferent, "north");
+	
+	northReferent.direction = kNorth;
+	RegisterReferent(&northReferent);
+
+
+	Referent eastReferent;
+	eastReferent.type = kReferentDirection;
+	eastReferent.shortName = "east";
+	LIST_IDENTIFIERS(eastReferent, "east");
+
+	eastReferent.direction = kEast;
+	RegisterReferent(&eastReferent);
+
+
+	Referent southReferent;
+	southReferent.type = kReferentDirection;
+	southReferent.shortName = "south";
+	LIST_IDENTIFIERS(southReferent, "south");
+
+	southReferent.direction = kSouth;
+	RegisterReferent(&southReferent);
+
+
+	Referent westReferent;
+	westReferent.type = kReferentDirection;
+	westReferent.shortName = "west";
+	LIST_IDENTIFIERS(westReferent, "west");
+
+	westReferent.direction = kWest;
+	RegisterReferent(&westReferent);
 }

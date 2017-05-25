@@ -12,6 +12,7 @@
 #include "room.h"
 #include "state.h"
 #include "IndexVector.h"
+#include "CompileTimeStrings.h"
 
 static bool s_CommandsRegistered[kCommandCount];
 Command g_AllCommands[kCommandCount];
@@ -68,19 +69,19 @@ void ExecuteLookCommand(const Command* me, Referent* subject, Referent* object)
 {
     if( object && (object->type & kReferentItem) )
     {
-        printf("%s\n", object->item->description);
+        printf("%s\n", object->item.description);
     }
     else
     {
-        printf("%s\n", GetCurrentRoom()->roomDescription);
+        printf("%s\n", GetCurrentRoom()->description);
     }
 }
 
 
-void ExecuteMoveDirection(Direction dir)
+void ExecuteMoveDirection(Referent* dir)
 {
     Room* currentRoom = GetCurrentRoom();
-    RoomLabel targetRoom = currentRoom->connectedRooms[dir];
+    RoomLabel targetRoom = currentRoom->connectedRooms[dir->direction];
 
     if(targetRoom != kNoRoom)
     {
@@ -89,7 +90,7 @@ void ExecuteMoveDirection(Direction dir)
     }
     else
     {
-        printf("I can't go %s.\n", GetDirectionStrings(dir)[0]);
+        printf("I can't go %s.\n", dir->identifiers[0]);
     }
 }
 
@@ -107,7 +108,7 @@ void ExecuteMoveRoom(RoomLabel label)
         }
     }
 
-    printf("I can't reach %s from here.\n", GetRoomPtr(label)->roomName);
+    printf("I can't reach %s from here.\n", GetRoomReferent(label)->shortName);
 }
 
 void ExecuteMoveCommand(const Command* me, Referent* subject, Referent* object)
@@ -117,7 +118,7 @@ void ExecuteMoveCommand(const Command* me, Referent* subject, Referent* object)
     // somehow get direction out of object.
     if(object->type & kReferentDirection)
     {
-        ExecuteMoveDirection(object->direction);
+        ExecuteMoveDirection(object);
     }
     else if (object->type & kReferentRoom)
     {
@@ -147,52 +148,46 @@ void ExecuteNoCommand(const Command* me, Referent* subject, Referent* object)
     ExecuteQuitCommand(NULL, NULL, NULL);
 }
 
-#define LIST_VERBS( cmd, ... ) \
-static const char* cmd##Verbs[] = { __VA_ARGS__ }; \
-cmd.verbs = cmd##Verbs; \
-cmd.verbCount = ARRAY_COUNT(cmd##Verbs);
 
 void RegisterCommands() {
 
+	
     Command lookCommand;
-    LIST_VERBS(lookCommand, "look", "examine", "view", "describe" );
-    //static const char* lookVerbs[] = {  "look", "examine", "view", "describe" };
-    //lookCommand.verbs = lookVerbs;
-    //lookCommand.verbCount = ARRAY_COUNT(lookVerbs);
+    LIST_IDENTIFIERS(lookCommand, "look", "examine", "view", "describe" );
     lookCommand.parseFlags = (ParseFlags)(kParseFlagImplicitObject | kParseFlagExplicitObject);
     lookCommand.execFunction = ExecuteLookCommand;
     RegisterCommand(kCommandLook, &lookCommand);
 
     Command moveCommand;
-    LIST_VERBS(moveCommand, "go", "move", "walk", "travel" );
+	LIST_IDENTIFIERS(moveCommand, "go", "move", "walk", "travel" );
     moveCommand.parseFlags = kParseFlagExplicitObject;
     moveCommand.execFunction = ExecuteMoveCommand;
     RegisterCommand(kCommandMove, &moveCommand);
 
     Command quitCommand;
-    LIST_VERBS(quitCommand, "quit", "exit");
+	LIST_IDENTIFIERS(quitCommand, "quit", "exit");
     quitCommand.parseFlags = kParseFlagImplicitObject;
     quitCommand.execFunction = ExecuteQuitCommand;
     RegisterCommand(kCommandQuit, &quitCommand);
 
     Command dieCommand;
-    LIST_VERBS(dieCommand, "die");
+	LIST_IDENTIFIERS(dieCommand, "die");
     dieCommand.parseFlags = kParseFlagImplicitObject;
     dieCommand.execFunction = ExecuteDieCommand;
     RegisterCommand(kCommandDie, &dieCommand);
 
     Command yesCommand;
-    LIST_VERBS(yesCommand, "y", "yes");
+	LIST_IDENTIFIERS(yesCommand, "y", "yes");
     yesCommand.parseFlags = kParseFlagImplicitObject;
     yesCommand.execFunction = ExecuteYesCommand;
     RegisterCommand(kCommandYes, &yesCommand);
 
     Command noCommand;
-    LIST_VERBS(noCommand, "n", "no");
+	LIST_IDENTIFIERS(noCommand, "n", "no");
     noCommand.parseFlags = kParseFlagImplicitObject;
     noCommand.execFunction = ExecuteNoCommand;
     RegisterCommand(kCommandNo, &noCommand);
-
+	
 
 }
 

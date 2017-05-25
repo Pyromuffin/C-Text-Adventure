@@ -1,5 +1,6 @@
 #pragma once
 #include <stdbool.h>
+#include "items.h"
 
 typedef struct Referent Referent;
 
@@ -28,10 +29,8 @@ typedef enum RoomLabel
 
 typedef struct Room
 {
-    const char* roomName;
-    const char** identifiers;
-    const char* roomDescription;
-    RoomLabel connectedRooms[kDirectionCount];
+	const char* description;
+	RoomLabel connectedRooms[kDirectionCount] = { kNoRoom, kNoRoom, kNoRoom, kNoRoom };
     bool visited;
 } Room;
 
@@ -39,7 +38,6 @@ typedef struct Room
 //extern Room g_AllTheRooms[kRoomCount];
 
 void ConnectRoomsTogether(RoomLabel from, RoomLabel to, Direction dir);
-void CreateSingleRoom( RoomLabel label, char* roomName, char* roomDescription );
 Direction GetOpposingDirection( Direction dir );
 Room* GetRoomPtr( RoomLabel label);
 Room* GetCurrentRoom();
@@ -49,4 +47,3 @@ void MoveToRoom( RoomLabel label);
 Referent* GetReferentsInRoom( RoomLabel label );
 void PrintArrivalGreeting( RoomLabel label );
 void PrintRoomDescription( RoomLabel label );
-const char** GetDirectionStrings(Direction dir);

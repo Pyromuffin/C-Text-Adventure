@@ -1,17 +1,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include "room.h"
+#include "items.h"
 
 Room g_AllTheRooms[kRoomCount];
 RoomLabel g_CurrentRoom = kDefaultRoom;
-
-static const char* s_DirectionStrings[][kDirectionCount] =
-{
-        {"north"},
-        {"west"},
-        {"south"},
-        {"east"},
-};
 
 Room* GetCurrentRoom()
 {
@@ -55,18 +48,6 @@ void ConnectRoomsTogether(RoomLabel from, RoomLabel to, Direction dir)
   toRoom->connectedRooms[GetOpposingDirection(dir)] = from;
 }
 
-void CreateSingleRoom( RoomLabel label, char* roomName, char* roomDescription )
-{
-  Room* room = GetRoomPtr(label);
-  room->roomName = roomName;
-  room->roomDescription = roomDescription;
-  room->visited = false;
-  for(int i= 0; i < kDirectionCount; i ++ )
-  {
-    room->connectedRooms[i] = kNoRoom;
-  }
-}
-
 void MoveToRoom(RoomLabel label)
 {
     g_CurrentRoom = label;
@@ -75,13 +56,14 @@ void MoveToRoom(RoomLabel label)
 void PrintRoomDescription( RoomLabel label )
 {
     Room* room = GetRoomPtr(label);
-    printf("%s\n", room->roomDescription);
+    printf("%s\n", room->description);
 }
 
 void PrintArrivalGreeting( RoomLabel label )
 {
     Room* room = GetRoomPtr(label);
-    printf("You arrive in %s.\n", room->roomName);
+	
+    printf("You arrive in %s.\n", GetRoomReferent(label)->shortName);
     if( !room->visited)
     {
         PrintRoomDescription(label);
@@ -90,7 +72,15 @@ void PrintArrivalGreeting( RoomLabel label )
     room->visited = true;
 }
 
-const char **GetDirectionStrings(Direction dir)
+void InitRooms()
 {
-     return s_DirectionStrings[dir];
+	for (int i = 0; i < kRoomCount; i++)
+	{
+		g_AllTheRooms[i].visited = false;
+
+		for (int j = 0; j < kDirectionCount; j++)
+		{
+			g_AllTheRooms[i].connectedRooms[j] = kNoRoom;
+		}
+	}
 }
