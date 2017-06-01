@@ -132,44 +132,61 @@ void DebugParsing(std::vector<IdentifierSequence>& sequences, bool disjunct, boo
 	IdentifierSequence* lastSeq = nullptr;
 	/////////////////// fix this //////////////////////////////////////////////////////
 	char bigBuffer[1000];
+
+	std::vector<IdentifierSequence> sequencesCopy;
 	for (auto& seq : sequences)
 	{
+		sequencesCopy.push_back(seq);
+	}
+
+	for (int i = 0; i < sequencesCopy.size(); i++)
+	{
+		auto& seq = sequencesCopy[i];
+
 		auto ref = GetReferent(seq.referent);
 		size_t refNameLength = strlen(ref->shortName);
 
 		int numberOfDashes = (seq.length * longestShortName) - refNameLength;
 		int numberOfSpaces = seq.startPosition * (longestShortName + 1);
 
-		if (lastSeq)
+		sprintf(bigBuffer, "%s%s%s%s", std::string(numberOfSpaces, ' ').c_str(), std::string(numberOfDashes / 2, '-').c_str(), ref->shortName, std::string(numberOfDashes / 2, '-').c_str());
+
+		auto* currentSeq = &seq;
+		std::vector<IdentifierSequence*> removeList;
+
+		for (int j = i + 1; j < sequencesCopy.size(); j++)
 		{
-			bool overlapsStart = (seq.startPosition >= lastSeq->startPosition) && (seq.startPosition <= (lastSeq->startPosition + lastSeq->length - 1));
-			bool further = seq.startPosition > lastSeq->startPosition;
+			auto& nextSeq = sequencesCopy[j];
+			bool overlapsStart = (nextSeq.startPosition >= currentSeq->startPosition) && (nextSeq.startPosition <= (currentSeq->startPosition + currentSeq->length - 1));
+			bool further = nextSeq.startPosition > currentSeq->startPosition;
 
 			if (!overlapsStart && further)
 			{
+				auto nextRef = GetReferent(nextSeq.referent);
+				auto nextRefNameLength = strlen(nextRef->shortName);
+
+				int nextNumberOfSpaces = nextSeq.startPosition * (longestShortName + 1);
+				int nextNumberOfDashes = (nextSeq.length * longestShortName) - nextRefNameLength;
+
 				size_t currentLength = strlen(bigBuffer);
-				numberOfSpaces -= currentLength;
-				numberOfSpaces = std::max(numberOfSpaces, 0);
-				sprintf(bigBuffer, "%s%s%s%s%s", bigBuffer, std::string(numberOfSpaces, ' ').c_str(), std::string(numberOfDashes / 2, '-').c_str(), ref->shortName, std::string(numberOfDashes / 2, '-').c_str());
-			}
-			else
-			{
-				printf(bigBuffer);
-				printf("\n");
-				lastSeq = nullptr;
+				nextNumberOfSpaces -= currentLength;
+				nextNumberOfSpaces = std::max(nextNumberOfSpaces, 0);
+				sprintf(bigBuffer, "%s%s%s%s%s", bigBuffer, std::string(nextNumberOfSpaces, ' ').c_str(), std::string(nextNumberOfDashes / 2, '-').c_str(), nextRef->shortName, std::string(nextNumberOfDashes / 2, '-').c_str());
+
+				nextSeq.referent = -1;
+				currentSeq = &nextSeq;
 			}
 		}
 
-		if (!lastSeq)
+		auto remover = [](const IdentifierSequence& s)
 		{
-			sprintf(bigBuffer, "%s%s%s%s", std::string(numberOfSpaces, ' ').c_str(), std::string(numberOfDashes / 2, '-').c_str(), ref->shortName, std::string(numberOfDashes / 2, '-').c_str());
-			lastSeq = &seq;
-		}
+			return s.referent == -1;
+		};
 
+		sequencesCopy.erase(std::remove_if(sequencesCopy.begin(), sequencesCopy.end(), remover), sequencesCopy.end());
+	
+		printf("%s\n",bigBuffer);
 	}
-
-	printf(bigBuffer);
-	printf("\n");
 
 	int index = 0;
 	for (auto& seq : sequences)
@@ -240,7 +257,7 @@ ParseResult ResolveParsedSequences(std::vector<IdentifierSequence>& sequences)
 		return a.startPosition < b.startPosition;
 	};
 
-	assert(sequences.size() >= 1 && sequences.size() <= 3);
+	// assert(sequences.size() >= 1 && sequences.size() <= 3);
 
 	std::sort(sequences.begin(), sequences.end(), startSorter);
 
@@ -302,6 +319,11 @@ ParseResult ParseInputString(TokenString* inputString)
 
 	auto lengthSorter = [](IdentifierSequence& a, IdentifierSequence& b)
 	{
+		if (a.length == b.length)
+		{
+			return a.startPosition < b.startPosition;
+		}
+
 		return a.length > b.length;
 	};
 
