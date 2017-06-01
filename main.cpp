@@ -15,7 +15,7 @@ void CreateTwoRooms()
 	bethsRoom.type = kReferentRoom;
 	bethsRoom.shortName = "Beth's room";
 	LIST_IDENTIFIERS(bethsRoom, "beth's room", "beths room");
-	bethsRoom.room = kBethsRoom;
+	bethsRoom.unionValues.room = kBethsRoom;
 	GetRoomPtr(kBethsRoom)->description = "This is a nice room. No cats allowed!";
 	RegisterReferent(&bethsRoom);
 
@@ -23,7 +23,7 @@ void CreateTwoRooms()
 	livingRoom.type = kReferentRoom;
 	livingRoom.shortName = "the living room";
 	LIST_IDENTIFIERS(livingRoom, "living room", "dying room", "super hyper room" );
-	livingRoom.room = kLivingRoom;
+	livingRoom.unionValues.room = kLivingRoom;
 	GetRoomPtr(kLivingRoom)->description = "Covered in cat hair. Constant beeping.";
 	RegisterReferent(&livingRoom);
 
@@ -61,6 +61,22 @@ void CleanUp()
     CheckForVectorLeaks();
 }
 
+void SetDebugGlobals(char* commandString)
+{
+	size_t length = strlen(commandString);
+
+	if ((commandString[length - 1] == '~') && (commandString[length - 2] == '~'))
+	{
+		g_RawDebugParse = true;
+		commandString[length - 2] = '\0';
+	}
+	else if (commandString[length - 1] == '~')
+	{
+		g_DebugParse = true;
+		commandString[length - 1] = '\0';
+	}
+}
+
 int main(int argc, char **args)
 {
     Init();
@@ -78,8 +94,13 @@ int main(int argc, char **args)
             continue;
 
         TrimSelf(commandString);
+		SetDebugGlobals(commandString);
 
-        ParseResult result = ParseCommand(commandString);
+		auto inputTokens = AllocateTokenString(commandString);
+
+		ParseResult result = ParseInputString(inputTokens.get());
+		fflush(stdout);
+
         if (result.valid)
         {
             const Command *command = GetCommand(result.commandLabel);

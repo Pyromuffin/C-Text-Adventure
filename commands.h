@@ -7,14 +7,13 @@
 struct Command;
 struct Referent;
 struct DynamicIndexArray;
-struct TokenString;
 
-typedef bool (*ParseFunction)(char*);
 typedef void (*CommandExecFunction)(const Command*, Referent*, Referent*);
 
 typedef enum CommandLabel
 {
     kCommandLook,
+	kCommandExamine,
     kCommandDie,
     kCommandQuit,
     kCommandTake,
@@ -35,8 +34,6 @@ typedef enum ParseFlags
 
 struct Command
 {
-	TokenString *identifiers;
-    size_t identifierCount;
     CommandExecFunction execFunction;
     ParseFlags parseFlags;
 };

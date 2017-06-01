@@ -38,6 +38,8 @@ struct TokenString
 	Token GetToken(size_t tokenIndex) const;
 	bool HasHash(Hash hash) const;
 	bool HasSubstring(const TokenString* subts) const;
+	int FindSubstring(const TokenString* subts) const;
+	void FindSubstrings(const TokenString* subts, DynamicIndexArray * dst) const;
 	bool operator == (const TokenString& r) const;
 
 	struct TokenIterator

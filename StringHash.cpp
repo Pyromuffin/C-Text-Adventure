@@ -142,6 +142,40 @@ bool TokenString::HasSubstring(const TokenString* subts) const
 	return false;
 }
 
+int TokenString::FindSubstring(const TokenString* subts) const
+{
+	if (subts->tokenCount > tokenCount)
+		return -1;
+
+	int startingPlaces = (tokenCount - subts->tokenCount) + 1;
+
+	for (int i = 0; i < startingPlaces; i++)
+	{
+		TokenString ts = Substring(this, i, subts->tokenCount);
+		if (ts == *subts)
+			return i;
+	}
+
+	return -1;
+}
+
+
+void TokenString::FindSubstrings(const TokenString* subts, DynamicIndexArray * dst) const
+{
+	if (subts->tokenCount > tokenCount)
+		return;
+
+	int startingPlaces = (tokenCount - subts->tokenCount) + 1;
+
+	for (int i = 0; i < startingPlaces; i++)
+	{
+		TokenString ts = Substring(this, i, subts->tokenCount);
+		if (ts == *subts)
+			PushIndex(dst, i);
+	}
+}
+
+
 bool TokenString::operator==(const TokenString& r) const
 {
 	if (tokenCount != r.tokenCount)

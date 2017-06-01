@@ -27,13 +27,18 @@ for(decltype(&array[0]) iteratorName = (vector->length) ? &array[vector->handles
 DynamicIndexArray* AllocateIndexVector(uint capacity, const char* name);
 void FreeIndexVector(DynamicIndexArray* vector);
 
+void RemoveSwapBack(DynamicIndexArray *me, IndexType index);
 void PushIndex(DynamicIndexArray *me, IndexType index);
 void PushIndexStatic(DynamicIndexArray *me, IndexType handle);
+
 IndexType PopIndex(DynamicIndexArray *me);
 
-void ResizeVector( DynamicIndexArray* me, uint newCapacity );
+void ResizeVector( DynamicIndexArray* me, uint newCapacity ); // still doesn't actually shrink.
 
 void InitVectorTracking();
 void CheckForVectorLeaks();
 
+// does not preserve ordering.
+void DeduplicateIndices(DynamicIndexArray * me); 
+void ResetVetor(DynamicIndexArray * me);
 

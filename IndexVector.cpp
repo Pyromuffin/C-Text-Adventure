@@ -85,6 +85,16 @@ void FreeIndexVector(DynamicIndexArray* vector)
     PushIndexStatic( &s_FreeList, offset );
 }
 
+void RemoveSwapBack(DynamicIndexArray *me, IndexType index)
+{
+	assert(me->length > 0);
+	assert(index < me->length);
+
+	IndexType back = me->handles[me->length -1];
+	me->handles[index] = back;
+	me->length--;
+}
+
 void InitVectorTracking()
 {
     for(uint i = 0; i < MAX_VECTORS; i++)
@@ -95,7 +105,6 @@ void InitVectorTracking()
 
 void CheckForVectorLeaks()
 {
-    assert(s_FreeList.length == MAX_VECTORS);
     bool foundIndices[MAX_VECTORS];
     memset(foundIndices, 0, sizeof(foundIndices));
 
@@ -117,4 +126,34 @@ void CheckForVectorLeaks()
             printf("Leaked Index %d, vector %s\n", i, s_AllVectors[i].name);
         }
     }
+
+	assert(s_FreeList.length == MAX_VECTORS);
+}
+
+
+void DeduplicateIndices(DynamicIndexArray * me)
+{
+	for (int handleIndex = 0; handleIndex < me->length; handleIndex++)
+	{
+		// for each element, scan through the rest of the elements to check for duplicates.
+		IndexType handle = me->handles[handleIndex];
+
+		for (int remainingHandleIndex = handleIndex + 1; remainingHandleIndex < me->length; remainingHandleIndex++)
+		{
+			IndexType comparedHandle = me->handles[remainingHandleIndex];
+			if (handle == comparedHandle)
+			{
+				// remove that element by swapping with the back.
+				RemoveSwapBack(me, remainingHandleIndex);
+				// and then decrement remaining ref index so that we check that index again (because we changed the value there).
+				remainingHandleIndex--;
+			}
+		}
+	}
+
+}
+
+void ResetVetor(DynamicIndexArray * me)
+{
+	me->length = 0;
 }

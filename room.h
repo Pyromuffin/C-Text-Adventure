@@ -1,38 +1,37 @@
 #pragma once
 #include <stdbool.h>
-#include "items.h"
 
-typedef struct Referent Referent;
+struct Referent;
 
-typedef enum Direction
+enum Direction
 {
-  kNorth,
-  kWest,
-  kSouth,
-  kEast,
+	kNorth,
+	kWest,
+	kSouth,
+	kEast,
 
-  kDirectionCount, // keep me at the bottom.
-} Direction;
+	kDirectionCount, // keep me at the bottom.
+};
 
-typedef enum RoomLabel
+enum RoomLabel
 {
-    kBethsRoom,
-    kLivingRoom,
-    kKellysRoom,
+	kBethsRoom,
+	kLivingRoom,
+	kKellysRoom,
 
-    kRoomCount,
-    // special room labels here
-    kDefaultRoom = kBethsRoom,
-    kNoRoom = -1,
+	kRoomCount,
+	// special room labels here
+	kDefaultRoom = kBethsRoom,
+	kNoRoom = -1,
 
-} RoomLabel;
+};
 
-typedef struct Room
+struct Room
 {
 	const char* description;
 	RoomLabel connectedRooms[kDirectionCount] = { kNoRoom, kNoRoom, kNoRoom, kNoRoom };
     bool visited;
-} Room;
+};
 
 //extern RoomLabel g_CurrentRoom;
 //extern Room g_AllTheRooms[kRoomCount];

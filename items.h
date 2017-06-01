@@ -6,6 +6,7 @@
 #include "room.h"
 #include "utility.h"
 #include "StringHash.h"
+#include "commands.h"
 
 typedef uint ReferentHandle;
 
@@ -18,9 +19,10 @@ typedef enum ItemFlags
 
 typedef enum ReferentType
 {
-    kReferentDirection = 1 << 0,
-    kReferentItem = 1 << 1,
-    kReferentRoom = 1 << 2,
+	kReferentDirection = 1 << 0,
+	kReferentItem = 1 << 1,
+	kReferentRoom = 1 << 2,
+	kReferentVerb = 1 << 3,
 }ReferentType;
 
 
@@ -31,21 +33,21 @@ typedef struct Item
 
 }Item;
 
-typedef struct Referent
+struct Referent
 {
 	ReferentType type;
 	const char* shortName;
 	TokenString* identifiers;
-	uint identifierCount;
+	size_t identifierCount;
 
 	union
 	{
-		enum Direction direction;
-		Item item;
-		enum RoomLabel room;
-	};
-
-} Referent;
+		Direction direction;
+		Item item; // eventually move this out of here. use a handle like everything else.
+		RoomLabel room;
+		CommandLabel command;
+	} unionValues;
+};
 
 extern const uint MAX_REFERENT_COUNT;
 extern Referent g_AllReferents[];

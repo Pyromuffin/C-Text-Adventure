@@ -13,6 +13,8 @@ static const uint MAX_REFERENT_COUNT = 10000;
 Referent g_AllReferents[MAX_REFERENT_COUNT];
 static ReferentHandle s_NextReferentIndex = 0;
 static ReferentHandle s_RoomHandles[kRoomCount];
+static ReferentHandle s_VerbHandles[kCommandCount];
+
 
 int GetTotalReferentCount()
 {
@@ -26,8 +28,14 @@ ReferentHandle RegisterReferent(Referent *referent) {
 
 	if (referent->type & kReferentRoom)
 	{
-		s_RoomHandles[referent->room] = handle;
+		s_RoomHandles[referent->unionValues.room] = handle;
 	}
+
+	if (referent->type & kReferentVerb)
+	{
+		s_VerbHandles[referent->unionValues.command] = handle;
+	}
+
 
     return handle;
 }
@@ -44,7 +52,7 @@ void MakeSomeItems()
 	nvidia.type = kReferentItem;
 	nvidia.shortName = "Nvidia";
 
-	nvidia.item.description = "Nvidia geforce gtx titan x is the floop cat.\n"
+	nvidia.unionValues.item.description = "Nvidia geforce gtx titan x is the floop cat.\n"
 		"Found near rugs, she is usually inverted - exposing her soft underbelly.\n"
 		"She is a connoisseur of the inedible.\n"
 		"Sneeze rating: Standard.\n";
@@ -56,13 +64,23 @@ void MakeSomeItems()
     flavorBlast.type = kReferentItem;
     flavorBlast.shortName = "Flavor Blast";
 
-    flavorBlast.item.description = "Flavor Blast is the floof cat.\n"
+    flavorBlast.unionValues.item.description = "Flavor Blast is the floof cat.\n"
             "Barely smart enough to breathe, his primary function is to grow fur.\n"
             "He has a secret itchy spot under his chin.\n"
             "Sneeze rating: Severe.\n";
 
 	LIST_IDENTIFIERS(flavorBlast, "flavor blast", "flavor cat", "flavor butt", "floof cat", "cat");
     RegisterReferent(&flavorBlast);
+
+
+
+	Referent catHat;
+	catHat.type = kReferentItem;
+	catHat.shortName = "Cat Hat";
+	catHat.unionValues.item.description = "I think this is a weird cat hat.\n";
+
+	LIST_IDENTIFIERS(catHat, "cat hat", "hat");
+	RegisterReferent(&catHat);
 }
 
 Referent* GetRoomReferent(RoomLabel label)
@@ -79,7 +97,7 @@ void MakeDirectionReferents()
 	northReferent.shortName = "north";
 	LIST_IDENTIFIERS(northReferent, "north");
 	
-	northReferent.direction = kNorth;
+	northReferent.unionValues.direction = kNorth;
 	RegisterReferent(&northReferent);
 
 
@@ -88,7 +106,7 @@ void MakeDirectionReferents()
 	eastReferent.shortName = "east";
 	LIST_IDENTIFIERS(eastReferent, "east");
 
-	eastReferent.direction = kEast;
+	eastReferent.unionValues.direction = kEast;
 	RegisterReferent(&eastReferent);
 
 
@@ -97,7 +115,7 @@ void MakeDirectionReferents()
 	southReferent.shortName = "south";
 	LIST_IDENTIFIERS(southReferent, "south");
 
-	southReferent.direction = kSouth;
+	southReferent.unionValues.direction = kSouth;
 	RegisterReferent(&southReferent);
 
 
@@ -106,6 +124,6 @@ void MakeDirectionReferents()
 	westReferent.shortName = "west";
 	LIST_IDENTIFIERS(westReferent, "west");
 
-	westReferent.direction = kWest;
+	westReferent.unionValues.direction = kWest;
 	RegisterReferent(&westReferent);
 }

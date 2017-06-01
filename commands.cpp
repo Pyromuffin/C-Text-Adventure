@@ -64,24 +64,26 @@ bool IsAcceptableReferentCount(ParseFlags flags, int referentCount)
 }
 
 
-
 void ExecuteLookCommand(const Command* me, Referent* subject, Referent* object)
 {
-    if( object && (object->type & kReferentItem) )
-    {
-        printf("%s\n", object->item.description);
-    }
-    else
-    {
-        printf("%s\n", GetCurrentRoom()->description);
-    }
+    printf("%s\n", GetCurrentRoom()->description);
 }
+
+
+void ExecuteExamineCommand(const Command* me, Referent* subject, Referent* object)
+{
+	if (object && (object->type & kReferentItem))
+	{
+		printf("%s\n", object->unionValues.item.description);
+	}
+}
+
 
 
 void ExecuteMoveDirection(Referent* dir)
 {
     Room* currentRoom = GetCurrentRoom();
-    RoomLabel targetRoom = currentRoom->connectedRooms[dir->direction];
+    RoomLabel targetRoom = currentRoom->connectedRooms[dir->unionValues.direction];
 
     if(targetRoom != kNoRoom)
     {
@@ -90,7 +92,7 @@ void ExecuteMoveDirection(Referent* dir)
     }
     else
     {
-        printf("I can't go %s.\n", dir->identifiers[0]);
+        printf("I can't go %s.\n", dir->shortName);
     }
 }
 
@@ -122,7 +124,7 @@ void ExecuteMoveCommand(const Command* me, Referent* subject, Referent* object)
     }
     else if (object->type & kReferentRoom)
     {
-        ExecuteMoveRoom(object->room);
+        ExecuteMoveRoom(object->unionValues.room);
     }
 }
 
@@ -149,21 +151,52 @@ void ExecuteNoCommand(const Command* me, Referent* subject, Referent* object)
 }
 
 
-void RegisterCommands() {
-
-	
+void RegisterCommands()
+{
     Command lookCommand;
-    LIST_IDENTIFIERS(lookCommand, "look", "examine", "view", "describe" );
-    lookCommand.parseFlags = (ParseFlags)(kParseFlagImplicitObject | kParseFlagExplicitObject);
+    lookCommand.parseFlags = kParseFlagImplicitObject;
     lookCommand.execFunction = ExecuteLookCommand;
     RegisterCommand(kCommandLook, &lookCommand);
 
+	Referent lookReferent;
+	lookReferent.type = kReferentVerb;
+	lookReferent.shortName = "look";
+	lookReferent.unionValues.command = kCommandLook;
+	LIST_IDENTIFIERS(lookReferent, "look", "look around");
+
+	RegisterReferent(&lookReferent);
+
+
+	Command examineCommand;
+	examineCommand.parseFlags = kParseFlagExplicitObject;
+	examineCommand.execFunction = ExecuteExamineCommand;
+	RegisterCommand(kCommandExamine, &examineCommand);
+
+	Referent examineReferent;
+	examineReferent.type = kReferentVerb;
+	examineReferent.shortName = "examine";
+	examineReferent.unionValues.command = kCommandExamine;
+	LIST_IDENTIFIERS(examineReferent, "examine", "look at", "describe", "tell me about");
+
+	RegisterReferent(&examineReferent);
+
+
+
     Command moveCommand;
-	LIST_IDENTIFIERS(moveCommand, "go", "move", "walk", "travel" );
     moveCommand.parseFlags = kParseFlagExplicitObject;
     moveCommand.execFunction = ExecuteMoveCommand;
     RegisterCommand(kCommandMove, &moveCommand);
 
+	Referent moveReferent;
+	moveReferent.type = kReferentVerb;
+	moveReferent.shortName = "move";
+	moveReferent.unionValues.command = kCommandMove;
+	LIST_IDENTIFIERS(moveReferent, "go", "move", "walk", "travel");
+
+	RegisterReferent(&moveReferent);
+
+
+	/*
     Command quitCommand;
 	LIST_IDENTIFIERS(quitCommand, "quit", "exit");
     quitCommand.parseFlags = kParseFlagImplicitObject;
@@ -187,7 +220,7 @@ void RegisterCommands() {
     noCommand.parseFlags = kParseFlagImplicitObject;
     noCommand.execFunction = ExecuteNoCommand;
     RegisterCommand(kCommandNo, &noCommand);
-	
+	*/
 
 }
 
