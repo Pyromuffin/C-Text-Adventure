@@ -91,39 +91,50 @@ Referent* GetRoomReferent(RoomLabel label)
 
 void MakeDirectionReferents()
 {
-
-	Referent northReferent;
-	northReferent.type = kReferentDirection;
-	northReferent.shortName = "north";
-	LIST_IDENTIFIERS(northReferent, "north");
-	
-	northReferent.unionValues.direction = kNorth;
-	RegisterReferent(&northReferent);
+	Referent lidReferent;
+	lidReferent.type = kReferentDirection;
+	lidReferent.shortName = "lidaline";
+	LIST_IDENTIFIERS(lidReferent, "lid", "lidaline");
+	lidReferent.unionValues.direction = kDirectionLidaline;
+	RegisterReferent(&lidReferent);
 
 
-	Referent eastReferent;
-	eastReferent.type = kReferentDirection;
-	eastReferent.shortName = "east";
-	LIST_IDENTIFIERS(eastReferent, "east");
-
-	eastReferent.unionValues.direction = kEast;
-	RegisterReferent(&eastReferent);
-
-
-	Referent southReferent;
-	southReferent.type = kReferentDirection;
-	southReferent.shortName = "south";
-	LIST_IDENTIFIERS(southReferent, "south");
-
-	southReferent.unionValues.direction = kSouth;
-	RegisterReferent(&southReferent);
+	Referent snorthReferent;
+	snorthReferent.type = kReferentDirection;
+	snorthReferent.shortName = "snorth";
+	LIST_IDENTIFIERS(snorthReferent, "sn", "snorth");
+	snorthReferent.unionValues.direction = kDirectionSnorth;
+	RegisterReferent(&snorthReferent);
 
 
-	Referent westReferent;
-	westReferent.type = kReferentDirection;
-	westReferent.shortName = "west";
-	LIST_IDENTIFIERS(westReferent, "west");
+	Referent aftReferent;
+	aftReferent.type = kReferentDirection;
+	aftReferent.shortName = "aft";
+	LIST_IDENTIFIERS(aftReferent, "aft");
+	aftReferent.unionValues.direction = kDirectionAft;
+	RegisterReferent(&aftReferent);
 
-	westReferent.unionValues.direction = kWest;
-	RegisterReferent(&westReferent);
+
+	Referent handleboundReferent;
+	handleboundReferent.type = kReferentDirection;
+	handleboundReferent.shortName = "handlebound";
+	LIST_IDENTIFIERS(handleboundReferent, "hb", "handlebound");
+	handleboundReferent.unionValues.direction = kDirectionHandlebound;
+	RegisterReferent(&handleboundReferent);
+
+
+	Referent spoutwardReferent;
+	spoutwardReferent.type = kReferentDirection;
+	spoutwardReferent.shortName = "spoutward";
+	LIST_IDENTIFIERS(spoutwardReferent, "sw", "spoutward");
+	spoutwardReferent.unionValues.direction = kDirectionSpoutward;
+	RegisterReferent(&spoutwardReferent);
+
+
+	Referent whistlewiseReferent;
+	whistlewiseReferent.type = kReferentDirection;
+	whistlewiseReferent.shortName = "whistlewise";
+	LIST_IDENTIFIERS(whistlewiseReferent, "ww", "whistlewise");
+	whistlewiseReferent.unionValues.direction = kDirectionWhistlewise;
+	RegisterReferent(&whistlewiseReferent);
 }

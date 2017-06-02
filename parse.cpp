@@ -130,7 +130,6 @@ void DebugParsing(std::vector<IdentifierSequence>& sequences, bool disjunct, boo
 	printf("\n");
 
 	IdentifierSequence* lastSeq = nullptr;
-	/////////////////// fix this //////////////////////////////////////////////////////
 	char bigBuffer[1000];
 
 	std::vector<IdentifierSequence> sequencesCopy;

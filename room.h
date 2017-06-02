@@ -5,23 +5,39 @@ struct Referent;
 
 enum Direction
 {
-	kNorth,
-	kWest,
-	kSouth,
-	kEast,
+	kDirectionLidaline,
+	kDirectionAft,
+	kDirectionSpoutward,
+	kDirectionSnorth,
+	kDirectionHandlebound,
+	kDirectionWhistlewise,
 
 	kDirectionCount, // keep me at the bottom.
 };
 
 enum RoomLabel
 {
-	kBethsRoom,
-	kLivingRoom,
-	kKellysRoom,
+	// act one: before the universe
+	kRoomPrecreation,
+
+	// act two: mirror apartment
+	kRoomBeth,
+	kRoomKitchen,
+	kRoomLiving,
+	kRoomBathroom,
+	kRoomCello,
+	kRoomRoommate,
+	kRoomMirrorRefrigerator,
+
+	// cat three: kettle
+	kRoomKettleTunnel,
+	kRoomKettleRefrigerator,
+	kRoomKettleLobby,
+	kRoomKettleMarket,
 
 	kRoomCount,
 	// special room labels here
-	kDefaultRoom = kBethsRoom,
+	kDefaultRoom = kRoomBeth,
 	kNoRoom = -1,
 
 };
@@ -29,7 +45,7 @@ enum RoomLabel
 struct Room
 {
 	const char* description;
-	RoomLabel connectedRooms[kDirectionCount] = { kNoRoom, kNoRoom, kNoRoom, kNoRoom };
+	RoomLabel connectedRooms[kDirectionCount] = { kNoRoom, kNoRoom, kNoRoom, kNoRoom, kNoRoom, kNoRoom };
     bool visited;
 };
 
@@ -45,4 +61,5 @@ void MoveToRoom( RoomLabel label);
 
 Referent* GetReferentsInRoom( RoomLabel label );
 void PrintArrivalGreeting( RoomLabel label );
-void PrintRoomDescription( RoomLabel label );
+void MakeRooms();
+void PrintRoomDescription(RoomLabel label);
