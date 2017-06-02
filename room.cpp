@@ -3,13 +3,19 @@
 #include "room.h"
 #include "items.h"
 #include "CompileTimeStrings.h"
+#include "IndexVector.h"
 
 Room g_AllTheRooms[kRoomCount];
 RoomLabel g_CurrentRoom = kDefaultRoom;
 
-Room* GetCurrentRoom()
+Room* GetCurrentRoomPtr()
 {
   return &g_AllTheRooms[g_CurrentRoom];
+}
+
+RoomLabel GetCurrentRoomLabel()
+{
+	return g_CurrentRoom;
 }
 
 Room* GetRoomPtr( RoomLabel label)
@@ -21,7 +27,7 @@ Direction GetOpposingDirection( Direction dir )
 {
   switch (dir)
   {
-	case kDirectionLidaline:
+	case kDirectionLidalign:
 		return kDirectionSnorth;
 		break;
 	case kDirectionAft:
@@ -31,7 +37,7 @@ Direction GetOpposingDirection( Direction dir )
 		return kDirectionWhistlewise;
 		break;
 	case kDirectionSnorth:
-		return kDirectionLidaline;
+		return kDirectionLidalign;
 		break;
 	case kDirectionHandlebound:
 		return kDirectionAft;
@@ -63,10 +69,56 @@ void MoveToRoom(RoomLabel label)
     g_CurrentRoom = label;
 }
 
+const DynamicIndexArray* GetReferentsInRoom(RoomLabel label)
+{
+	return GetRoomPtr(label)->containedItemReferents;
+}
+
 void PrintRoomDescription( RoomLabel label )
 {
+	const size_t BUFFER_SIZE = 1000;
+
     Room* room = GetRoomPtr(label);
     printf("%s\n", room->description);
+
+	char buf[BUFFER_SIZE];
+	bool explicitItem = false;
+
+	if (!room->containedItemReferents)
+		return;
+
+	ITERATE_VECTOR(Item, room->containedItemReferents, g_AllReferents)
+	{
+		if ( !(Item->unionValues.item.flags & ItemFlags::ItemFlagImplictLocation) )
+		{
+			if (!explicitItem)
+			{
+				snprintf(buf, BUFFER_SIZE, "%s", Item->shortName);
+			}
+			else
+			{
+				snprintf(buf, BUFFER_SIZE, "%s, %s", buf, Item->shortName);
+			}
+			explicitItem = true;
+		}
+	}
+
+	if (explicitItem)
+	{
+		printf("Also here is %s.\n", buf);
+	}
+}
+
+void AddItemToRoom(RoomLabel label, ReferentHandle referentIndex)
+{
+	DynamicIndexArray* items = GetRoomPtr(label)->containedItemReferents;
+	if (!items)
+	{
+		items = AllocateIndexVector(2, "room item holder"); // probably ok to leak this.
+		GetRoomPtr(label)->containedItemReferents = items;
+	}
+
+	PushIndex(items, referentIndex);
 }
 
 void PrintArrivalGreeting( RoomLabel label )
@@ -118,6 +170,10 @@ void MakeRooms()
 
 	ConnectRoomsTogether(kRoomBeth, kRoomKitchen, kDirectionAft);
 
+	Referent cello = Referent("your cello", Item{ "This is your cello. It's been through a lot. Definitely not immune to cats.", ItemFlags::ItemFlagUsable });
+	LIST_IDENTIFIERS(cello, "cello");
+	AddItemToRoom(kRoomBeth, RegisterReferent(&cello));
+
 	Referent kitchen;
 	kitchen.type = kReferentRoom;
 	kitchen.shortName = "the kitchen";
@@ -126,11 +182,20 @@ void MakeRooms()
 	GetRoomPtr(kRoomKitchen)->description = "The kitchen is the heart of the apartment. A free standing shelf is piled high with tea.\n"
 		"A table waits in the center of room. There's a sink next to the stove and a cabinet above.\n" 
 		"The Refrigerator remains unmentioned.\n"
-		"Handlebound is Beth's room, whistlewise leads to the bathroom, the cello room is lidaline, and the living room lies snorth.";
+		"Handlebound is Beth's room, whistlewise leads to the bathroom, the cello room is lidalign, and the living room lies snorth.";
 	RegisterReferent(&kitchen);
 
+	Referent fridge = Referent("the Refrigerator",
+		Item{ "The Refrigerator more closely resembles an obsidian monolith than a household appliance.\n"
+		"It is impossibly silent, as if it were sucking sound out of the room.\n"
+		"It is completely featureless except for a small bevel that separates what you assume is the upper freezer compartment.\n"
+		"An assortment of cute magnets are playfully arranged on the surface.", ItemFlags::ItemFlagImplictLocation });
+	LIST_IDENTIFIERS(fridge, "Refrigerator", "Fridge");
+	
+	AddItemToRoom(kRoomKitchen, RegisterReferent(&fridge));
+
 	ConnectRoomsTogether(kRoomKitchen, kRoomBathroom, kDirectionWhistlewise);
-	ConnectRoomsTogether(kRoomKitchen, kRoomCello, kDirectionLidaline);
+	ConnectRoomsTogether(kRoomKitchen, kRoomCello, kDirectionLidalign);
 	ConnectRoomsTogether(kRoomKitchen, kRoomLiving, kDirectionSnorth);
 
 	Referent bathroom;
@@ -149,10 +214,10 @@ void MakeRooms()
 	celloRoom.shortName = "the cello room";
 	LIST_IDENTIFIERS(celloRoom, "cello room");
 	celloRoom.unionValues.room = kRoomCello;
-	GetRoomPtr(kRoomCello)->description = "The oddly-named cello room is where you would keep your cello, if you had one.\n"
+	GetRoomPtr(kRoomCello)->description = "The oddly-named cello room is where you would keep your cello if you had one.\n"
 		"Effectively a utility closet, there's pretty much just stuff in here that you don't want cluttering up the rest of the apartment.\n"
-		"You hear faint wailing accompanied by what sound like very quiet dance music.\n"
-		"There's a vacuum cleaner, a pile of broken cat toys, a trash can, a deflated air bed.\n"
+		"You hear faint wailing accompanied by what sounds like very quiet dance music.\n"
+		"There's a vacuum cleaner, a pile of broken cat toys, a trash can, and a deflated air bed.\n"
 		"The kitchen is snorth.";
 	RegisterReferent(&celloRoom);
 
@@ -162,17 +227,17 @@ void MakeRooms()
 	livingRoom.shortName = "the living room";
 	LIST_IDENTIFIERS(livingRoom, "living room");
 	livingRoom.unionValues.room = kRoomLiving;
-	GetRoomPtr(kRoomLiving)->description = "Not really a separate room from the kitchen; it's just a few steps snorth of the kitchen table.\n"
+	GetRoomPtr(kRoomLiving)->description = "Not really a separate room from the kitchen, it's just a few steps snorth of the kitchen table.\n"
 		"Covered in cat hair, it would be a nice place to relax while drinking tea.\n"
 		"There's a couch near the wall.\n"
-		"The kitchen is lidaline, and aft is your weird room mate's weird room mate room.";
+		"The kitchen is lidalign, and aft is your weird roommate's weird roommate room.";
 	RegisterReferent(&livingRoom);
 
 	ConnectRoomsTogether(kRoomLiving, kRoomRoommate, kDirectionAft);
 
 	Referent roomMateRoom;
 	roomMateRoom.type = kReferentRoom;
-	roomMateRoom.shortName = "the weird weird roommate room";
+	roomMateRoom.shortName = "your weird roommate's weird roommate room";
 	LIST_IDENTIFIERS(roomMateRoom, "weird room", "room mate's room", "roommate's room", "room mates room", "roommates room");
 	roomMateRoom.unionValues.room = kRoomRoommate;
 	GetRoomPtr(kRoomRoommate)->description = "ARE YOU YOUR WEIRD ROOMMATE? THIS IS A FORBIDDEN ZONE. EXPERIENCE REMORSE.\n"

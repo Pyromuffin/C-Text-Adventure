@@ -7,7 +7,7 @@
 #include "IndexVector.h"
 #include "state.h"
 #include "items.h"
-#include "CompileTimeStrings.h"
+#include "StringHash.h"
 
 
 void Init()

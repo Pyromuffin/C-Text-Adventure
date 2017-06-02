@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+
 #include "commands.h"
 #include "utility.h"
 #include "items.h"
@@ -66,9 +67,8 @@ bool IsAcceptableReferentCount(ParseFlags flags, int referentCount)
 
 void ExecuteLookCommand(const Command* me, Referent* subject, Referent* object)
 {
-    printf("%s\n", GetCurrentRoom()->description);
+	PrintRoomDescription(GetCurrentRoomLabel());
 }
-
 
 void ExecuteExamineCommand(const Command* me, Referent* subject, Referent* object)
 {
@@ -82,7 +82,7 @@ void ExecuteExamineCommand(const Command* me, Referent* subject, Referent* objec
 
 void ExecuteMoveDirection(Referent* dir)
 {
-    Room* currentRoom = GetCurrentRoom();
+    Room* currentRoom = GetCurrentRoomPtr();
     RoomLabel targetRoom = currentRoom->connectedRooms[dir->unionValues.direction];
 
     if(targetRoom != kNoRoom)
@@ -98,7 +98,7 @@ void ExecuteMoveDirection(Referent* dir)
 
 void ExecuteMoveRoom(RoomLabel label)
 {
-    Room* current = GetCurrentRoom();
+    Room* current = GetCurrentRoomPtr();
 
     for(int i =0; i < kDirectionCount; i ++ )
     {

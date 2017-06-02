@@ -7,7 +7,6 @@
 #include "utility.h"
 
 struct DynamicIndexArray;
-typedef uint Hash;
 
 struct TokenString
 {
@@ -76,24 +75,6 @@ struct TokenString
 	}
 };
 
-template<size_t staticTokenCount, size_t stringLength>
-struct ConstantTokenString
-{
-	Hash hashes[staticTokenCount];
-	size_t tokenIndices[staticTokenCount];
-	char tokenizedString[stringLength];
-
-	TokenString GetTokenString() const
-	{
-		TokenString ts;
-		ts.hashes = (Hash*)&hashes[0];
-		ts.tokenIndices = (size_t*)&tokenIndices[0];
-		ts.tokenizedString = (char*)&tokenizedString[0];
-		ts.tokenCount = staticTokenCount;
-
-		return ts;
-	}
-};
 
 constexpr Hash HashString(const char *string);
 constexpr const size_t WordCount(const char *str);

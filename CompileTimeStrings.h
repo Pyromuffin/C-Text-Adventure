@@ -1,7 +1,27 @@
 #pragma once
-#include <utility>
 #include <array>
 #include <tuple>
+#include "utility.h"
+#include "StringHash.h"
+
+template<size_t staticTokenCount, size_t stringLength>
+struct ConstantTokenString
+{
+	Hash hashes[staticTokenCount];
+	size_t tokenIndices[staticTokenCount];
+	char tokenizedString[stringLength];
+
+	TokenString GetTokenString() const
+	{
+		TokenString ts;
+		ts.hashes = (Hash*)&hashes[0];
+		ts.tokenIndices = (size_t*)&tokenIndices[0];
+		ts.tokenizedString = (char*)&tokenizedString[0];
+		ts.tokenCount = staticTokenCount;
+
+		return ts;
+	}
+};
 
 template<size_t tupleSize, typename TupleType, size_t ... tupleIndices>
 auto GetTokenStringArrayIndices(TupleType& tuple, std::index_sequence<tupleIndices ...>)

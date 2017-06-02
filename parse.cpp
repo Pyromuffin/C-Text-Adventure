@@ -3,15 +3,17 @@
 //
 #include <string.h>
 #include <stdio.h>
+#include <vector>
+#include <algorithm>
+#include <tuple>
+#include <assert.h>
+
 
 #include "parse.h"
 #include "utility.h"
 #include "IndexVector.h"
 #include "items.h"
-#include <vector>
-#include <algorithm>
-#include <tuple>
-#include <assert.h>
+#include "StringHash.h"
 
 bool g_DebugParse, g_RawDebugParse;
 

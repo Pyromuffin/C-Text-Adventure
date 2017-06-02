@@ -1,11 +1,12 @@
 #pragma once
 #include <stdbool.h>
+#include "IndexVector.h"
 
 struct Referent;
 
 enum Direction
 {
-	kDirectionLidaline,
+	kDirectionLidalign,
 	kDirectionAft,
 	kDirectionSpoutward,
 	kDirectionSnorth,
@@ -46,20 +47,20 @@ struct Room
 {
 	const char* description;
 	RoomLabel connectedRooms[kDirectionCount] = { kNoRoom, kNoRoom, kNoRoom, kNoRoom, kNoRoom, kNoRoom };
-    bool visited;
+	DynamicIndexArray* containedItemReferents = nullptr;
+    bool visited = false;
 };
-
-//extern RoomLabel g_CurrentRoom;
-//extern Room g_AllTheRooms[kRoomCount];
 
 void ConnectRoomsTogether(RoomLabel from, RoomLabel to, Direction dir);
 Direction GetOpposingDirection( Direction dir );
 Room* GetRoomPtr( RoomLabel label);
-Room* GetCurrentRoom();
-void MoveToRoom( RoomLabel label);
+Room* GetCurrentRoomPtr();
+RoomLabel GetCurrentRoomLabel();
+void MoveToRoom(RoomLabel label);
 
 
-Referent* GetReferentsInRoom( RoomLabel label );
+const DynamicIndexArray* GetReferentsInRoom( RoomLabel label );
 void PrintArrivalGreeting( RoomLabel label );
 void MakeRooms();
 void PrintRoomDescription(RoomLabel label);
+void AddItemToRoom(RoomLabel label, ReferentHandle referentIndex);

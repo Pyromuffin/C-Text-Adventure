@@ -5,8 +5,6 @@
 #pragma once
 #include "utility.h"
 
-typedef uint IndexType;
-
 struct DynamicIndexArray
 {
     IndexType* handles;

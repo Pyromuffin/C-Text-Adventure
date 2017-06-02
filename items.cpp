@@ -6,7 +6,9 @@
 #include "utility.h"
 #include "items.h"
 #include "room.h"
+#include "StringHash.h"
 #include "CompileTimeStrings.h"
+#include "commands.h"
 
 static const uint MAX_REFERENT_COUNT = 10000;
 
@@ -45,7 +47,6 @@ const Referent* GetReferent(ReferentHandle handle)
     return &g_AllReferents[handle];
 }
 
-
 void MakeSomeItems()
 {
 	Referent nvidia;
@@ -81,6 +82,13 @@ void MakeSomeItems()
 
 	LIST_IDENTIFIERS(catHat, "cat hat", "hat");
 	RegisterReferent(&catHat);
+
+
+
+
+
+
+
 }
 
 Referent* GetRoomReferent(RoomLabel label)
@@ -93,9 +101,9 @@ void MakeDirectionReferents()
 {
 	Referent lidReferent;
 	lidReferent.type = kReferentDirection;
-	lidReferent.shortName = "lidaline";
-	LIST_IDENTIFIERS(lidReferent, "lid", "lidaline");
-	lidReferent.unionValues.direction = kDirectionLidaline;
+	lidReferent.shortName = "lidalign";
+	LIST_IDENTIFIERS(lidReferent, "lid", "lidalign");
+	lidReferent.unionValues.direction = kDirectionLidalign;
 	RegisterReferent(&lidReferent);
 
 

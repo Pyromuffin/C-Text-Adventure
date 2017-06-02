@@ -3,35 +3,38 @@
 //
 #pragma once
 
-#include "room.h"
 #include "utility.h"
-#include "StringHash.h"
-#include "commands.h"
 
-typedef uint ReferentHandle;
+enum RoomLabel;
+enum Direction;
+enum CommandLabel;
+struct TokenString;
 
-typedef enum ItemFlags
+enum ItemFlags
 {
-    ItemFlagUsable = 1 << 0,
+    ItemFlagUsable			 = 1 << 0,
+	ItemFlagPickup			 = 1 << 1,
+	ItemFlagContainer		 = 1 << 2,
+	ItemFlagImplictLocation	 = 1 << 3,
+};
 
-} ItemFlags;
 
-
-typedef enum ReferentType
+enum ReferentType
 {
 	kReferentDirection = 1 << 0,
 	kReferentItem = 1 << 1,
 	kReferentRoom = 1 << 2,
 	kReferentVerb = 1 << 3,
-}ReferentType;
+};
 
 
-typedef struct Item
+struct Item
 {
-    char* description;
-    ItemFlags flags;
+	char* description;
+	ItemFlags flags;
+};
 
-}Item;
+
 
 struct Referent
 {
@@ -47,6 +50,22 @@ struct Referent
 		RoomLabel room;
 		CommandLabel command;
 	} unionValues;
+
+	Referent() {};
+	template<typename T>
+	
+	Referent(const char* shortName, T referentType)
+	{
+		SetType(referentType);
+		this->shortName = shortName;
+	}
+
+private:
+	template<typename T>  void SetType(T) { static_assert(false); }
+	template<> void SetType<Item>(Item thing)					{ type = kReferentItem; unionValues.item = thing; }
+	template<> void SetType<Direction>(Direction thing)			{ type = kReferentDirection; unionValues.direction = thing; }
+	template<> void SetType<RoomLabel>(RoomLabel thing)			{ type = kReferentRoom; unionValues.room = thing; }
+	template<> void SetType<CommandLabel>(CommandLabel thing)	{ type = kReferentVerb; unionValues.command = thing; ; }
 };
 
 extern const uint MAX_REFERENT_COUNT;
