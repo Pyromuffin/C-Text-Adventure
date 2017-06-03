@@ -50,7 +50,7 @@ int main(int argc, char **args)
 
     while (GetProgramRunningMode() == kPlaying || GetProgramRunningMode() == kDead)
     {
-        printf("> ");
+        printf("\n> ");
         fflush(stdout);
 
         fgets(commandString, 255, stdin);
@@ -67,7 +67,6 @@ int main(int argc, char **args)
 
         if (result.valid)
         {
-			printf("\n");
             const Command *command = GetCommand(result.commandLabel);
             command->execFunction(command, result.subject, result.object);
             fflush(stdout);

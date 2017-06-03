@@ -6,7 +6,7 @@ struct Referent;
 
 enum Direction
 {
-	kDirectionLidalign,
+	kDirectionAlid,
 	kDirectionAft,
 	kDirectionSpoutward,
 	kDirectionSnorth,
@@ -56,7 +56,7 @@ Direction GetOpposingDirection( Direction dir );
 Room* GetRoomPtr( RoomLabel label);
 Room* GetCurrentRoomPtr();
 RoomLabel GetCurrentRoomLabel();
-void MoveToRoom(RoomLabel label);
+void SetCurrentRoom(RoomLabel label);
 
 
 const DynamicIndexArray* GetReferentsInRoom( RoomLabel label );

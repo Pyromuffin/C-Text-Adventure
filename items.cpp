@@ -13,10 +13,26 @@
 static const uint MAX_REFERENT_COUNT = 10000;
 
 Referent g_AllReferents[MAX_REFERENT_COUNT];
-static ReferentHandle s_NextReferentIndex = 0;
+static ReferentHandle s_NextReferentIndex = 1;
 static ReferentHandle s_RoomHandles[kRoomCount];
 static ReferentHandle s_VerbHandles[kCommandCount];
+static ReferentHandle s_DirectionHandles[kDirectionCount];
 
+
+ReferentHandle* GetAllRoomHandles()
+{
+	return &s_RoomHandles[0];
+}
+
+ReferentHandle* GetAllVerbHandles()
+{
+	return &s_VerbHandles[0];
+}
+
+ReferentHandle* GetAllDirectionHandles()
+{
+	return &s_DirectionHandles[0];
+}
 
 int GetTotalReferentCount()
 {
@@ -32,12 +48,14 @@ ReferentHandle RegisterReferent(Referent *referent) {
 	{
 		s_RoomHandles[referent->unionValues.room] = handle;
 	}
-
-	if (referent->type & kReferentVerb)
+	else if (referent->type & kReferentVerb)
 	{
 		s_VerbHandles[referent->unionValues.command] = handle;
 	}
-
+	else if (referent->type & kReferentDirection)
+	{
+		s_DirectionHandles[referent->unionValues.direction] = handle;
+	}
 
     return handle;
 }
@@ -101,9 +119,9 @@ void MakeDirectionReferents()
 {
 	Referent lidReferent;
 	lidReferent.type = kReferentDirection;
-	lidReferent.shortName = "lidalign";
-	LIST_IDENTIFIERS(lidReferent, "lid", "lidalign");
-	lidReferent.unionValues.direction = kDirectionLidalign;
+	lidReferent.shortName = "alid";
+	LIST_IDENTIFIERS(lidReferent, "lid", "alid");
+	lidReferent.unionValues.direction = kDirectionAlid;
 	RegisterReferent(&lidReferent);
 
 

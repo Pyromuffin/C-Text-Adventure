@@ -14,25 +14,48 @@
 #include "IndexVector.h"
 #include "items.h"
 #include "StringHash.h"
+#include "room.h"
 
 bool g_DebugParse, g_RawDebugParse;
 
 DynamicIndexArray* GetAvailableReferents()
 {
-    // for now, just search allllll referents.
-    // eventually this needs to do the following:
-    // referents in room
-    // referents in inventory
-    // global or special referents
-    // referents to adjacent rooms
+	// ok, so get all the direction referents, all the command referents, and the referents in the room, and probably all *discovered* room referents.
 
-    DynamicIndexArray* referents = AllocateIndexVector(GetTotalReferentCount(), "All Referents" );
+    DynamicIndexArray* referents = AllocateIndexVector(20, "available referents" );
+	Room* currentRoom = GetCurrentRoomPtr();
+	const DynamicIndexArray* roomItems = currentRoom->containedItemReferents;
 
-    for(int i =0; i < GetTotalReferentCount(); i ++)
-    {
-        PushIndexStatic(referents, (IndexType)i);
-    }
+	if (roomItems != nullptr)
+	{
+		for (int i = 0; i < roomItems->length; i++)
+		{
+			PushIndex(referents, roomItems->handles[i]);
+		}
+	}
 
+	ReferentHandle* allRooms = GetAllRoomHandles();
+	ReferentHandle* allDirections = GetAllDirectionHandles();
+	ReferentHandle* allCommands = GetAllVerbHandles();
+
+	for (int i = 0; i < kCommandCount; i++)
+	{
+		if(allCommands[i] != kReferentUnregisteredIndex)
+			PushIndex(referents, allCommands[i]);
+	}
+
+	for (int i = 0; i < Direction::kDirectionCount; i++)
+	{
+		ReferentHandle connectedRoom = currentRoom->connectedRooms[i];
+		if ((connectedRoom != kNoRoom) && (allRooms[connectedRoom] != kReferentUnregisteredIndex))
+		{
+			PushIndex(referents, allRooms[connectedRoom]);
+		}
+
+		//also push the direction referents here.
+		PushIndex(referents, allDirections[i]);
+	}
+    
     return referents;
 }
 
@@ -285,6 +308,12 @@ ParseResult ResolveParsedSequences(std::vector<IdentifierSequence>& sequences)
 			result.subject = result.object;
 			result.object = ref;
 		}
+	}
+
+	if (result.valid)
+	{
+		const Command* cmd = GetCommand(result.commandLabel);
+		result.valid = IsAcceptableReferentCount(cmd->parseFlags, sequences.size() - 1);
 	}
 
 	return result;

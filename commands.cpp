@@ -14,6 +14,7 @@
 #include "state.h"
 #include "IndexVector.h"
 #include "CompileTimeStrings.h"
+#include "GameScript.h"
 
 static bool s_CommandsRegistered[kCommandCount];
 Command g_AllCommands[kCommandCount];
@@ -80,6 +81,19 @@ void ExecuteExamineCommand(const Command* me, Referent* subject, Referent* objec
 
 
 
+void MoveToRoom(RoomLabel from, RoomLabel to)
+{
+	RoomScript* toScript = GetRoomScript(to);
+	RoomScript* fromScript = GetRoomScript(from);
+
+	if (fromScript) fromScript->OnExit(to);
+
+	SetCurrentRoom(to);
+	PrintArrivalGreeting(to);
+
+	if (toScript) toScript->OnEnter(from);
+}
+
 void ExecuteMoveDirection(Referent* dir)
 {
     Room* currentRoom = GetCurrentRoomPtr();
@@ -87,8 +101,7 @@ void ExecuteMoveDirection(Referent* dir)
 
     if(targetRoom != kNoRoom)
     {
-        MoveToRoom(targetRoom);
-        PrintArrivalGreeting(targetRoom);
+		MoveToRoom(GetCurrentRoomLabel(), targetRoom);
     }
     else
     {
@@ -104,8 +117,7 @@ void ExecuteMoveRoom(RoomLabel label)
     {
         if( current->connectedRooms[i] == label)
         {
-            MoveToRoom(label);
-            PrintArrivalGreeting(label);
+			MoveToRoom(GetCurrentRoomLabel(), label);
             return;
         }
     }

@@ -5,6 +5,8 @@
 
 #include "utility.h"
 
+#define kReferentUnregisteredIndex 0
+
 enum RoomLabel;
 enum Direction;
 enum CommandLabel;
@@ -74,6 +76,9 @@ extern Referent g_AllReferents[];
 Referent* GetRoomReferent(enum RoomLabel label);
 ReferentHandle RegisterReferent(Referent* referent);
 const Referent* GetReferent(ReferentHandle handle);
+ReferentHandle* GetAllRoomHandles();
+ReferentHandle* GetAllVerbHandles();
+ReferentHandle* GetAllDirectionHandles();
 int GetTotalReferentCount();
 void MakeDirectionReferents();
 void MakeSomeItems();

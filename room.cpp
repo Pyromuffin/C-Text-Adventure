@@ -4,6 +4,7 @@
 #include "items.h"
 #include "CompileTimeStrings.h"
 #include "IndexVector.h"
+#include "GameScript.h"
 
 Room g_AllTheRooms[kRoomCount];
 RoomLabel g_CurrentRoom = kDefaultRoom;
@@ -27,7 +28,7 @@ Direction GetOpposingDirection( Direction dir )
 {
   switch (dir)
   {
-	case kDirectionLidalign:
+	case kDirectionAlid:
 		return kDirectionSnorth;
 		break;
 	case kDirectionAft:
@@ -37,7 +38,7 @@ Direction GetOpposingDirection( Direction dir )
 		return kDirectionWhistlewise;
 		break;
 	case kDirectionSnorth:
-		return kDirectionLidalign;
+		return kDirectionAlid;
 		break;
 	case kDirectionHandlebound:
 		return kDirectionAft;
@@ -64,7 +65,7 @@ void ConnectRoomsTogether(RoomLabel from, RoomLabel to, Direction dir)
   toRoom->connectedRooms[GetOpposingDirection(dir)] = from;
 }
 
-void MoveToRoom(RoomLabel label)
+void SetCurrentRoom(RoomLabel label)
 {
     g_CurrentRoom = label;
 }
@@ -80,6 +81,17 @@ void PrintRoomDescription( RoomLabel label )
 
     Room* room = GetRoomPtr(label);
     printf("%s\n", room->description);
+
+	RoomScript* script = GetRoomScript(GetCurrentRoomLabel());
+	if (script) script->PrintAdditionalDescription();
+
+
+
+
+
+
+
+
 
 	char buf[BUFFER_SIZE];
 	bool explicitItem = false;
@@ -107,6 +119,7 @@ void PrintRoomDescription( RoomLabel label )
 	{
 		printf("Also here is %s.\n", buf);
 	}
+
 }
 
 void AddItemToRoom(RoomLabel label, ReferentHandle referentIndex)
@@ -182,20 +195,20 @@ void MakeRooms()
 	GetRoomPtr(kRoomKitchen)->description = "The kitchen is the heart of the apartment. A free standing shelf is piled high with tea.\n"
 		"A table waits in the center of room. There's a sink next to the stove and a cabinet above.\n" 
 		"The Refrigerator remains unmentioned.\n"
-		"Handlebound is Beth's room, whistlewise leads to the bathroom, the cello room is lidalign, and the living room lies snorth.";
+		"Handlebound is Beth's room, whistlewise leads to the bathroom, the cello room is alid, and the living room lies snorth.";
 	RegisterReferent(&kitchen);
 
 	Referent fridge = Referent("the Refrigerator",
 		Item{ "The Refrigerator more closely resembles an obsidian monolith than a household appliance.\n"
 		"It is impossibly silent, as if it were sucking sound out of the room.\n"
 		"It is completely featureless except for a small bevel that separates what you assume is the upper freezer compartment.\n"
-		"An assortment of cute magnets are playfully arranged on the surface.", ItemFlags::ItemFlagImplictLocation });
+		"An assortment of cute magnets are playfully arranged on its foreboding surface.", ItemFlags::ItemFlagImplictLocation });
 	LIST_IDENTIFIERS(fridge, "Refrigerator", "Fridge");
 	
 	AddItemToRoom(kRoomKitchen, RegisterReferent(&fridge));
 
 	ConnectRoomsTogether(kRoomKitchen, kRoomBathroom, kDirectionWhistlewise);
-	ConnectRoomsTogether(kRoomKitchen, kRoomCello, kDirectionLidalign);
+	ConnectRoomsTogether(kRoomKitchen, kRoomCello, kDirectionAlid);
 	ConnectRoomsTogether(kRoomKitchen, kRoomLiving, kDirectionSnorth);
 
 	Referent bathroom;
@@ -230,7 +243,7 @@ void MakeRooms()
 	GetRoomPtr(kRoomLiving)->description = "Not really a separate room from the kitchen, it's just a few steps snorth of the kitchen table.\n"
 		"Covered in cat hair, it would be a nice place to relax while drinking tea.\n"
 		"There's a couch near the wall.\n"
-		"The kitchen is lidalign, and aft is your weird roommate's weird roommate room.";
+		"The kitchen is alid, and aft is your weird roommate's weird roommate room.";
 	RegisterReferent(&livingRoom);
 
 	ConnectRoomsTogether(kRoomLiving, kRoomRoommate, kDirectionAft);
