@@ -24,12 +24,12 @@ void RegisterRoomScript(RoomLabel label, RoomScript* roomScript)
 type(RoomLabel label) \
 { \
 	RegisterRoomScript(label, this); \
-}
-
+}\
+static RoomLabel ms_label
 
 
 template<RoomLabel label>
-auto& GetRoomScriptSpecifically() {}
+auto& GetRoomScriptSpecifically() { static_assert(false, "Unregistered Script"); }
 
 #define REGISTER_SCRIPT(myType, label) \
 static myType s_##myType = myType(label); \
@@ -37,7 +37,25 @@ template<> \
 auto& GetRoomScriptSpecifically<label>() \
 { \
 	return s_##myType; \
+}\
+RoomLabel myType::ms_label = label
+
+
+template<typename T>
+T& GetRoomScriptSpecifically()
+{
+	return *reinterpret_cast<T*>(s_RoomScripts[T::ms_label]);
 }
+
+
+class KitchenScript : public RoomScript
+{
+public:
+	MAKE_CONSTRUCTOR(KitchenScript);
+	bool m_cats = false;
+	virtual void OnExit(RoomLabel to) override;
+};
+REGISTER_SCRIPT(KitchenScript, kRoomKitchen);
 
 
 class BethsRoomScript : public RoomScript
@@ -46,7 +64,7 @@ public:
 	MAKE_CONSTRUCTOR(BethsRoomScript);
 
 	bool m_doorOpen = false;
-	bool m_coveredInCatHair;
+	bool m_coveredInCatHair = false;
 
 	virtual void OnEnter(RoomLabel from) override
 	{
@@ -72,25 +90,17 @@ public:
 			printf("Cat hair covers every exposed surface. Just being in here makes your nose itch.\n");
 	}
 };
-
 REGISTER_SCRIPT(BethsRoomScript, kRoomBeth);
 
 
-class KitchenScript : public RoomScript
+void KitchenScript::OnExit(RoomLabel to)
 {
-public:
-	MAKE_CONSTRUCTOR(KitchenScript);
+	auto& bethsScript = GetRoomScriptSpecifically<kRoomBeth>();
 
-	virtual void OnExit(RoomLabel to) override
+	if (bethsScript.m_doorOpen && to != kRoomBeth)
 	{
-		auto& bethsScript = GetRoomScriptSpecifically<kRoomBeth>();
-
-		if (bethsScript.m_doorOpen && to != kRoomBeth)
-		{
-			printf("Because you left the door open, the cats rush into Beth's room!\n\n");
-			bethsScript.m_coveredInCatHair = true;
-		}
+		printf("Because you left the door open, the cats rush into Beth's room!\n\n");
+		bethsScript.m_coveredInCatHair = true;
 	}
-};
+}
 
-REGISTER_SCRIPT(KitchenScript, kRoomKitchen);
