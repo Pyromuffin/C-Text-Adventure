@@ -5,6 +5,7 @@
         "name": "x86-Debug",
         "generator": "Ninja",
         "configurationType" : "Debug",
+        "referenceContexts": [ "msvc_x86" ],
         "buildRoot":  "${env.LOCALAPPDATA}\\CMakeBuild\\${workspaceHash}\\build\\${name}",
         "cmakeCommandArgs":  "",
         "buildCommandArgs": "-v",
@@ -13,28 +14,31 @@
         {
         "name": "x86-Release",
         "generator": "Ninja",
-        "configurationType" : "Release",
+        "configurationType" : "RelWithDebInfo",
+        "referenceContexts": [ "msvc_x86" ],
         "buildRoot":  "${env.LOCALAPPDATA}\\CMakeBuild\\${workspaceHash}\\build\\${name}",
         "cmakeCommandArgs":  "",
         "buildCommandArgs": "-v",
         "ctestCommandArgs":  ""
         },
-      {
-        "name": "x64-Debug",
-        "generator": "Visual Studio 15 2017 Win64",
-        "configurationType": "Debug",
-        "buildRoot": "${env.LOCALAPPDATA}\\CMakeBuild\\${workspaceHash}\\build\\${name}",
-        "cmakeCommandArgs": "",
-        "buildCommandArgs": "-m -v:normal -p:PreferredToolArchitecture=x64",
-        "ctestCommandArgs": ""
-      },
         {
-        "name": "x64-Release",
-        "generator": "Visual Studio 15 2017 Win64",
-        "configurationType" : "Release",
+        "name": "x64-Debug",
+        "generator": "Ninja",
+        "configurationType" : "Debug",
+        "referenceContexts": [ "msvc_x64" ],
         "buildRoot":  "${env.LOCALAPPDATA}\\CMakeBuild\\${workspaceHash}\\build\\${name}",
         "cmakeCommandArgs":  "",
-        "buildCommandArgs": "-m -v:minimal",
+        "buildCommandArgs": "-v",
+        "ctestCommandArgs":  ""
+        },
+        {
+        "name": "x64-Release",
+        "generator": "Ninja",
+        "configurationType" : "RelWithDebInfo",
+       "referenceContexts": [ "msvc_x64" ],
+        "buildRoot":  "${env.LOCALAPPDATA}\\CMakeBuild\\${workspaceHash}\\build\\${name}",
+        "cmakeCommandArgs":  "",
+        "buildCommandArgs": "-v",
         "ctestCommandArgs":  ""
         }
     ]

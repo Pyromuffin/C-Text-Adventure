@@ -3,11 +3,11 @@
 //
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
+
 #include <vector>
 #include <algorithm>
 #include <tuple>
-#include <assert.h>
-
 
 #include "parse.h"
 #include "utility.h"
@@ -15,6 +15,9 @@
 #include "items.h"
 #include "StringHash.h"
 #include "room.h"
+
+//import std.core;
+//import std.memory;
 
 bool g_DebugParse, g_RawDebugParse;
 
