@@ -4,7 +4,6 @@
 #pragma once
 
 #include "utility.h"
-#include "stdio.h"
 
 #define kReferentUnregisteredIndex 0
 
@@ -56,7 +55,7 @@ struct Referent
 
 	Referent() {};
 
-    template<typename T>  void SetType(T) {  printf("does this ever get called?"); }
+    template<typename T>  void SetType(T) { }
 
     template<typename T>
 	Referent(const char* shortName, T referentType)
