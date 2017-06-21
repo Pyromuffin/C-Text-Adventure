@@ -4,7 +4,7 @@
 
 struct Referent;
 
-enum Direction
+enum Direction : int
 {
 	kDirectionAlid,
 	kDirectionAft,
@@ -16,7 +16,7 @@ enum Direction
 	kDirectionCount, // keep me at the bottom.
 };
 
-enum RoomLabel
+enum RoomLabel : int
 {
 	// act one: before the universe
 	kRoomPrecreation,

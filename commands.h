@@ -10,7 +10,7 @@ struct DynamicIndexArray;
 
 typedef void (*CommandExecFunction)(const Command*, Referent*, Referent*);
 
-typedef enum CommandLabel
+typedef enum CommandLabel : int
 {
     kCommandLook,
 	kCommandExamine,

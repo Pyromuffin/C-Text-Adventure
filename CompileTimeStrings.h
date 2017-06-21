@@ -118,15 +118,20 @@ constexpr decltype(auto) make_string()
 []{\
 	const char* strList[] = {__VA_ARGS__}; \
 	constexpr size_t stringCount = ARRAY_COUNT(strList); \
-	struct StrType { const char* const strList[stringCount] = {__VA_ARGS__} ; }; \
+	struct StrType { const char* strList[stringCount] = {__VA_ARGS__} ; }; \
 	return make_string<StrType, stringCount>(); \
 }()
 
+inline void SetData(Referent& ref, TokenString* identifiers, size_t identifierCount)
+{
+	ref.identifiers = identifiers;
+	ref.identifierCount = identifierCount;
+}
+
 #define LIST_IDENTIFIERS( refName, ... ) \
-static constexpr char* refName##_strList[] = { __VA_ARGS__ }; \
+static constexpr const char* refName##_strList[] = { __VA_ARGS__ }; \
 constexpr size_t refName##_stringCount = ARRAY_COUNT(refName##_strList); \
 struct refName##_StrType { const char* const strList[refName##_stringCount] = { __VA_ARGS__ }; }; \
 static constexpr auto refName##_tuple = make_string<refName##_StrType, refName##_stringCount>(); \
 static auto refName##_array = GetTokenStringArray(refName##_tuple); \
-refName##.identifiers = refName##_array.data(); \
-refName##.identifierCount = refName##_stringCount
+SetData(refName, refName##_array.data(), refName##_stringCount)

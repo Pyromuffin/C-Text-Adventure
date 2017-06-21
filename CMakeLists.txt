@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.7)
 project(C_Text_Adventure)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "/EHsc /std:c++latest /experimental:module /module:search ${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_CXX_STANDARD 14)
+#set(CMAKE_CXX_FLAGS "/EHsc /std:c++latest /experimental:module /module:search ${CMAKE_CURRENT_BINARY_DIR}")
 
 set(SOURCE_FILES
         main.cpp
@@ -29,6 +29,6 @@ WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 
 add_executable(C_Text_Adventure ${SOURCE_FILES})
 
-target_link_libraries(C_Text_Adventure ${OBJECT_FILE_PATHS})
+#target_link_libraries(C_Text_Adventure ${OBJECT_FILE_PATHS})
 
-add_dependencies(C_Text_Adventure MODULES)
+#add_dependencies(C_Text_Adventure MODULES)

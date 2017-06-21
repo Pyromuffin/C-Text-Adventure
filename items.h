@@ -4,12 +4,13 @@
 #pragma once
 
 #include "utility.h"
+#include "stdio.h"
 
 #define kReferentUnregisteredIndex 0
 
-enum RoomLabel;
-enum Direction;
-enum CommandLabel;
+enum RoomLabel : int;
+enum Direction : int;
+enum CommandLabel : int;
 struct TokenString;
 
 enum ItemFlags
@@ -32,7 +33,7 @@ enum ReferentType
 
 struct Item
 {
-	char* description;
+	const char* description;
 	ItemFlags flags;
 };
 
@@ -54,8 +55,10 @@ struct Referent
 	} unionValues;
 
 	Referent() {};
-	template<typename T>
-	
+
+    template<typename T>  void SetType(T) {  printf("does this ever get called?"); }
+
+    template<typename T>
 	Referent(const char* shortName, T referentType)
 	{
 		SetType(referentType);
@@ -63,11 +66,7 @@ struct Referent
 	}
 
 private:
-	template<typename T>  void SetType(T) { static_assert(false); }
-	template<> void SetType<Item>(Item thing)					{ type = kReferentItem; unionValues.item = thing; }
-	template<> void SetType<Direction>(Direction thing)			{ type = kReferentDirection; unionValues.direction = thing; }
-	template<> void SetType<RoomLabel>(RoomLabel thing)			{ type = kReferentRoom; unionValues.room = thing; }
-	template<> void SetType<CommandLabel>(CommandLabel thing)	{ type = kReferentVerb; unionValues.command = thing; ; }
+
 };
 
 extern const uint MAX_REFERENT_COUNT;

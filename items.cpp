@@ -10,7 +10,7 @@
 #include "CompileTimeStrings.h"
 #include "commands.h"
 
-static const uint MAX_REFERENT_COUNT = 10000;
+const uint MAX_REFERENT_COUNT = 10000;
 
 Referent g_AllReferents[MAX_REFERENT_COUNT];
 static ReferentHandle s_NextReferentIndex = 1;
@@ -164,3 +164,12 @@ void MakeDirectionReferents()
 	whistlewiseReferent.unionValues.direction = kDirectionWhistlewise;
 	RegisterReferent(&whistlewiseReferent);
 }
+
+
+
+// template specializations
+
+template<> void Referent::SetType<Item>(Item thing)					{ type = kReferentItem; unionValues.item = thing; }
+template<> void Referent::SetType<Direction>(Direction thing)			{ type = kReferentDirection; unionValues.direction = thing; }
+template<> void Referent::SetType<RoomLabel>(RoomLabel thing)			{ type = kReferentRoom; unionValues.room = thing; }
+template<> void Referent::SetType<CommandLabel>(CommandLabel thing)	{ type = kReferentVerb; unionValues.command = thing; ; }

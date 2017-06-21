@@ -3,16 +3,13 @@
 //
 #include <string.h>
 #include <stdio.h>
-#include <assert.h>
 
 #include <vector>
-#include <algorithm>
-#include <tuple>
+#include <string>
 
 #include "parse.h"
 #include "utility.h"
 #include "IndexVector.h"
-#include "items.h"
 #include "StringHash.h"
 #include "room.h"
 
@@ -149,7 +146,7 @@ void DebugParsing(std::vector<IdentifierSequence>& sequences, bool disjunct, boo
 
 	for (auto token : *input)
 	{
-		printf("%llu", token.index);
+		printf("%zu", token.index);
 		for (int i = 0; i < longestShortName; i++)
 		{
 			printf(" ");
@@ -219,7 +216,7 @@ void DebugParsing(std::vector<IdentifierSequence>& sequences, bool disjunct, boo
 	for (auto& seq : sequences)
 	{
 		auto ref = GetReferent(seq.referent);
-		printf("sequence index: %d, start: %llu, length: %llu, referent name: %s, identifier: ", index, seq.startPosition, seq.length, ref->shortName);
+		printf("sequence index: %d, start: %zu, length: %zu, referent name: %s, identifier: ", index, seq.startPosition, seq.length, ref->shortName);
 		PrintIdentifier(seq, input);
 		printf("\n");
 		index++;

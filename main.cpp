@@ -7,8 +7,8 @@
 #include "items.h"
 #include "StringHash.h"
 
-import Sweet;
-import Cool;
+//import Sweet;
+//import Cool;
 
 void Init()
 {
@@ -44,13 +44,6 @@ void SetDebugGlobals(char* commandString)
 int main(int argc, char **args)
 {
     Init();
-
-	int zebra = AddFriends(5, 10);
-	printf("ZEBRA: %d\n", zebra);
-
-
-	int camel = AddBros(1, 12);
-	printf("CAMEL: %d\n", camel);
 
     char commandString[256] = "Fake Command!";
     PrintArrivalGreeting(kDefaultRoom);

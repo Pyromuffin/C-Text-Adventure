@@ -2,7 +2,7 @@
 #include "room.h"
 #include <assert.h>
 
-enum RoomLabel;
+enum RoomLabel : int;
 class RoomScript;
 
 void RegisterRoomScript(RoomLabel label, RoomScript* roomScript);

@@ -29,7 +29,7 @@ static RoomLabel ms_label
 
 
 template<RoomLabel label>
-auto& GetRoomScriptSpecifically() { static_assert(false, "Unregistered Script"); }
+auto& GetRoomScriptSpecifically() { /* static_assert(false, "Unregistered Script"); */ }
 
 #define REGISTER_SCRIPT(myType, label) \
 static myType s_##myType = myType(label); \
