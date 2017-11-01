@@ -168,7 +168,7 @@ void MakeDirectionReferents()
 
 
 // template specializations
-
+template<typename T>  void Referent::SetType(T) { };
 template<> void Referent::SetType<Item>(Item thing)					{ type = kReferentItem; unionValues.item = thing; }
 template<> void Referent::SetType<Direction>(Direction thing)			{ type = kReferentDirection; unionValues.direction = thing; }
 template<> void Referent::SetType<RoomLabel>(RoomLabel thing)			{ type = kReferentRoom; unionValues.room = thing; }

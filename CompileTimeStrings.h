@@ -11,6 +11,9 @@ struct ConstantTokenString
 	size_t tokenIndices[staticTokenCount];
 	char tokenizedString[stringLength];
 
+	static constexpr size_t staticTokenCount = staticTokenCount;
+	static constexpr size_t stringLength = stringLength;
+
 	TokenString GetTokenString() const
 	{
 		TokenString ts;
@@ -37,14 +40,15 @@ auto GetTokenStringArray(TupleType &tuple)
 	return GetTokenStringArrayIndices<tupleSize>(tuple, std::make_index_sequence<tupleSize>());
 }
 
+#pragma warning(disable : 4307)
 constexpr Hash ConstHashString(const char *string)
 {
-	Hash hash = 2166136261;
+	Hash hash = 2166136261UL;
 
 	for (int i = 0; string[i] != '\0'; i++)
 	{
 		hash = hash ^ string[i];
-		hash = hash * 16777619;
+		hash = hash * 16777619UL;
 	}
 
 	return hash;

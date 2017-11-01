@@ -6,6 +6,8 @@
 
 #include <vector>
 #include <string>
+#include <tuple>
+#include <algorithm>
 
 #include "parse.h"
 #include "utility.h"
@@ -28,7 +30,7 @@ DynamicIndexArray* GetAvailableReferents()
 
 	if (roomItems != nullptr)
 	{
-		for (int i = 0; i < roomItems->length; i++)
+		for (uint i = 0; i < roomItems->length; i++)
 		{
 			PushIndex(referents, roomItems->handles[i]);
 		}
@@ -68,7 +70,7 @@ struct IdentifierSequence
 
 void AddIdentifierSequences(const DynamicIndexArray* substringVector, size_t tokenCount, const ReferentHandle referentHandle, std::vector<IdentifierSequence> &sequences)
 {
-	for (int substringIndex = 0; substringIndex < substringVector->length; substringIndex++)
+	for (uint substringIndex = 0; substringIndex < substringVector->length; substringIndex++)
 	{
 		IndexType substringPos = substringVector->handles[substringIndex];
 		IdentifierSequence sequence;
@@ -170,8 +172,8 @@ void DebugParsing(std::vector<IdentifierSequence>& sequences, bool disjunct, boo
 		auto ref = GetReferent(seq.referent);
 		size_t refNameLength = strlen(ref->shortName);
 
-		int numberOfDashes = (seq.length * longestShortName) - refNameLength;
-		int numberOfSpaces = seq.startPosition * (longestShortName + 1);
+		size_t numberOfDashes = (seq.length * longestShortName) - refNameLength;
+		size_t numberOfSpaces = seq.startPosition * (longestShortName + 1);
 
 		sprintf(bigBuffer, "%s%s%s%s", std::string(numberOfSpaces, ' ').c_str(), std::string(numberOfDashes / 2, '-').c_str(), ref->shortName, std::string(numberOfDashes / 2, '-').c_str());
 
@@ -372,7 +374,7 @@ ParseResult ParseInputString(TokenString* inputString)
 	for (int i = 0; i < sequences.size(); i++)
 	{
 		overlapping.clear();
-		std::tie(disjunct, ambiguous, potentialAmbiguous) = RemoveOverlappingSequences(sequences, overlapping, sequences[i]);
+		auto [disjunct, ambiguous, potentialAmbiguous] = RemoveOverlappingSequences(sequences, overlapping, sequences[i]);
 		if (disjunct || ambiguous)
 			break;
 	}

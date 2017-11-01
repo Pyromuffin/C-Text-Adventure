@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <memory.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "IndexVector.h"
 
 static const uint MAX_VECTORS = 100;
@@ -77,7 +78,7 @@ void FreeIndexVector(DynamicIndexArray* vector)
     vector->length = 0;
     vector->handles = NULL;
 
-    IndexType offset = vector - &s_AllVectors[0]; // don't forget about how pointer arithmetic works.
+    IndexType offset = (IndexType)(vector - &s_AllVectors[0]); // don't forget about how pointer arithmetic works.
     assert(offset >= 0);
     assert(offset < MAX_VECTORS);
 
@@ -133,12 +134,12 @@ void CheckForVectorLeaks()
 
 void DeduplicateIndices(DynamicIndexArray * me)
 {
-	for (int handleIndex = 0; handleIndex < me->length; handleIndex++)
+	for (uint handleIndex = 0; handleIndex < me->length; handleIndex++)
 	{
 		// for each element, scan through the rest of the elements to check for duplicates.
 		IndexType handle = me->handles[handleIndex];
 
-		for (int remainingHandleIndex = handleIndex + 1; remainingHandleIndex < me->length; remainingHandleIndex++)
+		for (uint remainingHandleIndex = handleIndex + 1; remainingHandleIndex < me->length; remainingHandleIndex++)
 		{
 			IndexType comparedHandle = me->handles[remainingHandleIndex];
 			if (handle == comparedHandle)

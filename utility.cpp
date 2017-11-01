@@ -22,9 +22,9 @@ bool IsWhiteSpace(char c)
 }
 
 void TrimSelf(char* input) {
-    int inputLen = strlen(input);
+    size_t inputLen = strlen(input);
 
-    for (int i = inputLen - 1; IsWhiteSpace(input[i]); i--)
+    for (size_t i = inputLen - 1; IsWhiteSpace(input[i]); i--)
     {
         input[i] = '\0';
     }

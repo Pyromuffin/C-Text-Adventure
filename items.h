@@ -7,9 +7,9 @@
 
 #define kReferentUnregisteredIndex 0
 
-enum RoomLabel : int;
-enum Direction : int;
-enum CommandLabel : int;
+enum RoomLabel;
+enum Direction;
+enum CommandLabel;
 struct TokenString;
 
 enum ItemFlags
@@ -55,7 +55,7 @@ struct Referent
 
 	Referent() {};
 
-    template<typename T>  void SetType(T) { }
+	template<typename T>  void SetType(T);
 
     template<typename T>
 	Referent(const char* shortName, T referentType)

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <array>
 
 #include "commands.h"
 #include "utility.h"
@@ -163,6 +164,7 @@ void ExecuteNoCommand(const Command* me, Referent* subject, Referent* object)
 }
 
 
+
 void RegisterCommands()
 {
     Command lookCommand;
@@ -175,9 +177,7 @@ void RegisterCommands()
 	lookReferent.shortName = "look";
 	lookReferent.unionValues.command = kCommandLook;
 	LIST_IDENTIFIERS(lookReferent, "look", "look around");
-
 	RegisterReferent(&lookReferent);
-
 
 	Command examineCommand;
 	examineCommand.parseFlags = kParseFlagExplicitObject;
@@ -191,7 +191,6 @@ void RegisterCommands()
 	LIST_IDENTIFIERS(examineReferent, "examine", "look at", "describe", "tell me about");
 
 	RegisterReferent(&examineReferent);
-
 
 
     Command moveCommand;

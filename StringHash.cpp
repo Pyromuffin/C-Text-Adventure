@@ -130,7 +130,7 @@ bool TokenString::HasSubstring(const TokenString* subts) const
 	if (subts->tokenCount > tokenCount)
 		return false;
 
-	int startingPlaces = (tokenCount - subts->tokenCount) + 1;
+	size_t startingPlaces = (tokenCount - subts->tokenCount) + 1;
 
 	for (int i = 0; i < startingPlaces; i++)
 	{
@@ -147,7 +147,7 @@ int TokenString::FindSubstring(const TokenString* subts) const
 	if (subts->tokenCount > tokenCount)
 		return -1;
 
-	int startingPlaces = (tokenCount - subts->tokenCount) + 1;
+	size_t startingPlaces = (tokenCount - subts->tokenCount) + 1;
 
 	for (int i = 0; i < startingPlaces; i++)
 	{
@@ -165,7 +165,7 @@ void TokenString::FindSubstrings(const TokenString* subts, DynamicIndexArray * d
 	if (subts->tokenCount > tokenCount)
 		return;
 
-	int startingPlaces = (tokenCount - subts->tokenCount) + 1;
+	size_t startingPlaces = (tokenCount - subts->tokenCount) + 1;
 
 	for (int i = 0; i < startingPlaces; i++)
 	{
