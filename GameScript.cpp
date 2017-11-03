@@ -1,74 +1,68 @@
 #include <stdio.h>
-
-
+#include <vector>
 #include "GameScript.h"
+#include "items.h"
+#include "cereal\archives\json.hpp"
 
+// better change this guy whenever you add or reorder serializable members
+static const uint32_t SCRIPT_VERSION = 1; 
+CEREAL_CLASS_VERSION(RoomScript, SCRIPT_VERSION);
 
-static RoomScript* s_RoomScripts[kRoomCount];
+RoomScript* RoomScript::ms_roomScripts[kRoomCount];
+
+template<RoomLabel label>
+auto& GetRoomScript() { return nullptr };
+
+#define REGISTER_SCRIPT( name )  \
+static name s_##name; \
+template<> \
+auto& GetRoomScript<name::label>() { return s_##name; }
 
 
 RoomScript* GetRoomScript(RoomLabel label)
 {
-	return s_RoomScripts[label];
+	return RoomScript::ms_roomScripts[label];
 }
 
 
-void RegisterRoomScript(RoomLabel label, RoomScript* roomScript)
+void RoomScript::Load()
 {
-	s_RoomScripts[label] = roomScript;
+	/*
+	//std::ifstream saveFile;
+	//saveFile.open("C:\\lomg\\potato.txt");
+
+//	cereal::JSONInputArchive iarchive(saveFile);
+
+	for (int i = 0; i < kRoomCount; i++)
+	{
+		if (ms_roomScripts[i] != nullptr)
+		{
+			iarchive(*ms_roomScripts[i]);
+		}
+	}
+	*/
 }
 
 
-
-#define MAKE_CONSTRUCTOR(type) \
-type(RoomLabel label) \
-{ \
-	RegisterRoomScript(label, this); \
-}\
-static RoomLabel ms_label
-
-
-template<RoomLabel label>
-auto& GetRoomScriptSpecifically() { /* static_assert(false, "Unregistered Script"); */ }
-
-#define REGISTER_SCRIPT(myType, label) \
-static myType s_##myType = myType(label); \
-template<> \
-auto& GetRoomScriptSpecifically<label>() \
-{ \
-	return s_##myType; \
-}\
-RoomLabel myType::ms_label = label
-
-
-template<typename T>
-T& GetRoomScriptSpecifically()
-{
-	return *reinterpret_cast<T*>(s_RoomScripts[T::ms_label]);
-}
-
-
-class KitchenScript : public RoomScript
+class KitchenScript : public SpecificRoomScript<kRoomKitchen>
 {
 public:
-	MAKE_CONSTRUCTOR(KitchenScript);
-	bool m_cats = false;
+	Serialize<bool> m_cats = false;
 	virtual void OnExit(RoomLabel to) override;
 };
-REGISTER_SCRIPT(KitchenScript, kRoomKitchen);
+REGISTER_SCRIPT(KitchenScript);
 
 
-class BethsRoomScript : public RoomScript
+class BethsRoomScript : public SpecificRoomScript<kRoomBeth>
 {
 public:
-	MAKE_CONSTRUCTOR(BethsRoomScript);
-
-	bool m_doorOpen = false;
-	bool m_coveredInCatHair = false;
+	
+	Serialize<bool> once = true;
+	Serialize<bool> m_doorOpen = false;
+	Serialize<bool> m_coveredInCatHair = false;
 
 	virtual void OnEnter(RoomLabel from) override
 	{
-		static bool once = true;
 		if (m_coveredInCatHair && once)
 		{
 			printf("Due to your negligence, the cats have ravaged Beth's once pristine room.\n\nYou lose one sneeze point!\n");
@@ -89,18 +83,23 @@ public:
 		if (m_coveredInCatHair)
 			printf("Cat hair covers every exposed surface. Just being in here makes your nose itch.\n");
 	}
+
+
 };
-REGISTER_SCRIPT(BethsRoomScript, kRoomBeth);
+REGISTER_SCRIPT(BethsRoomScript);
+
 
 
 void KitchenScript::OnExit(RoomLabel to)
 {
-	auto& bethsScript = GetRoomScriptSpecifically<kRoomBeth>();
+	
+	auto& bethsScript = GetRoomScript<kRoomBeth>();
 
 	if (bethsScript.m_doorOpen && to != kRoomBeth)
 	{
 		printf("Because you left the door open, the cats rush into Beth's room!\n\n");
 		bethsScript.m_coveredInCatHair = true;
 	}
+	
 }
 

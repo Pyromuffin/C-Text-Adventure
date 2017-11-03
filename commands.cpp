@@ -7,15 +7,19 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <array>
+#include <fstream>
+
+#include "cereal\archives\json.hpp"
 
 #include "commands.h"
 #include "utility.h"
 #include "items.h"
-#include "room.h"
 #include "state.h"
 #include "IndexVector.h"
 #include "CompileTimeStrings.h"
 #include "GameScript.h"
+#include "GameState.h"
+
 
 static bool s_CommandsRegistered[kCommandCount];
 Command g_AllCommands[kCommandCount];
@@ -69,7 +73,7 @@ bool IsAcceptableReferentCount(ParseFlags flags, int referentCount)
 
 void ExecuteLookCommand(const Command* me, Referent* subject, Referent* object)
 {
-	PrintRoomDescription(GetCurrentRoomLabel());
+	PrintRoomDescription(GameState::GetCurrentRoomLabel());
 }
 
 void ExecuteExamineCommand(const Command* me, Referent* subject, Referent* object)
@@ -89,7 +93,7 @@ void MoveToRoom(RoomLabel from, RoomLabel to)
 
 	if (fromScript) fromScript->OnExit(to);
 
-	SetCurrentRoom(to);
+	GameState::SetCurrentRoom(to);
 	PrintArrivalGreeting(to);
 
 	if (toScript) toScript->OnEnter(from);
@@ -97,12 +101,12 @@ void MoveToRoom(RoomLabel from, RoomLabel to)
 
 void ExecuteMoveDirection(Referent* dir)
 {
-    Room* currentRoom = GetCurrentRoomPtr();
+    Room* currentRoom = GameState::GetCurrentRoomPtr();
     RoomLabel targetRoom = currentRoom->connectedRooms[dir->unionValues.direction];
 
     if(targetRoom != kNoRoom)
     {
-		MoveToRoom(GetCurrentRoomLabel(), targetRoom);
+		MoveToRoom(GameState::GetCurrentRoomLabel(), targetRoom);
     }
     else
     {
@@ -112,19 +116,41 @@ void ExecuteMoveDirection(Referent* dir)
 
 void ExecuteMoveRoom(RoomLabel label)
 {
-    Room* current = GetCurrentRoomPtr();
+    Room* current = GameState::GetCurrentRoomPtr();
 
     for(int i =0; i < kDirectionCount; i ++ )
     {
         if( current->connectedRooms[i] == label)
         {
-			MoveToRoom(GetCurrentRoomLabel(), label);
+			MoveToRoom(GameState::GetCurrentRoomLabel(), label);
             return;
         }
     }
 
     printf("I can't reach %s from here.\n", GetRoomReferent(label)->shortName);
 }
+
+
+void ExecuteSaveCommand(const Command* me, Referent* subject, Referent* object)
+{
+	// save game state and room scripts
+	std::ofstream saveFile;
+	saveFile.open("C:\\lomg\\potato.txt");
+
+	cereal::JSONOutputArchive oarchive(saveFile);
+
+	for (int i = 0; i < kRoomCount; i++)
+	{
+		if (RoomScript::ms_roomScripts[i] != nullptr)
+		{
+			auto room = GetRoomReferent((RoomLabel)i);
+			auto nvp = cereal::make_nvp(room->shortName, *RoomScript::ms_roomScripts[i]);
+			oarchive(nvp);
+		}
+	}
+
+}
+
 
 void ExecuteMoveCommand(const Command* me, Referent* subject, Referent* object)
 {
@@ -206,6 +232,18 @@ void RegisterCommands()
 
 	RegisterReferent(&moveReferent);
 
+	Command saveCommand;
+	saveCommand.parseFlags = kParseFlagImplicitObject;
+	saveCommand.execFunction = ExecuteMoveCommand;
+	RegisterCommand(kCommandSave, &saveCommand);
+
+	Referent saveReferent;
+	saveReferent.type = kReferentVerb;
+	saveReferent.shortName = "save";
+	saveReferent.unionValues.command = kCommandSave;
+	LIST_IDENTIFIERS(saveReferent, "save");
+
+	RegisterReferent(&saveReferent);
 
 	/*
     Command quitCommand;

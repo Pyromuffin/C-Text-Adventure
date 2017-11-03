@@ -54,10 +54,6 @@ struct Room
 void ConnectRoomsTogether(RoomLabel from, RoomLabel to, Direction dir);
 Direction GetOpposingDirection( Direction dir );
 Room* GetRoomPtr( RoomLabel label);
-Room* GetCurrentRoomPtr();
-RoomLabel GetCurrentRoomLabel();
-void SetCurrentRoom(RoomLabel label);
-
 
 const DynamicIndexArray* GetReferentsInRoom( RoomLabel label );
 void PrintArrivalGreeting( RoomLabel label );

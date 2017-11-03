@@ -5,19 +5,10 @@
 #include "CompileTimeStrings.h"
 #include "IndexVector.h"
 #include "GameScript.h"
+#include "GameState.h"
 
 Room g_AllTheRooms[kRoomCount];
-RoomLabel g_CurrentRoom = kDefaultRoom;
 
-Room* GetCurrentRoomPtr()
-{
-  return &g_AllTheRooms[g_CurrentRoom];
-}
-
-RoomLabel GetCurrentRoomLabel()
-{
-	return g_CurrentRoom;
-}
 
 Room* GetRoomPtr( RoomLabel label)
 {
@@ -65,10 +56,6 @@ void ConnectRoomsTogether(RoomLabel from, RoomLabel to, Direction dir)
   toRoom->connectedRooms[GetOpposingDirection(dir)] = from;
 }
 
-void SetCurrentRoom(RoomLabel label)
-{
-    g_CurrentRoom = label;
-}
 
 const DynamicIndexArray* GetReferentsInRoom(RoomLabel label)
 {
@@ -82,12 +69,8 @@ void PrintRoomDescription( RoomLabel label )
     Room* room = GetRoomPtr(label);
     printf("%s\n", room->description);
 
-	RoomScript* script = GetRoomScript(GetCurrentRoomLabel());
+	RoomScript* script = GetRoomScript(GameState::GetCurrentRoomLabel());
 	if (script) script->PrintAdditionalDescription();
-
-
-
-
 
 
 

@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.7)
 project(C_Text_Adventure)
 
 #set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "/EHsc /std:c++latest")
+set(CMAKE_CXX_FLAGS "/EHsc /std:c++latest /wd4996")
+
+include_directories("cereal/")
 
 set(SOURCE_FILES
         main.cpp

@@ -14,6 +14,7 @@
 #include "IndexVector.h"
 #include "StringHash.h"
 #include "room.h"
+#include "GameState.h"
 
 //import std.core;
 //import std.memory;
@@ -25,7 +26,7 @@ DynamicIndexArray* GetAvailableReferents()
 	// ok, so get all the direction referents, all the command referents, and the referents in the room, and probably all *discovered* room referents.
 
     DynamicIndexArray* referents = AllocateIndexVector(20, "available referents" );
-	Room* currentRoom = GetCurrentRoomPtr();
+	Room* currentRoom = GameState::GetCurrentRoomPtr();
 	const DynamicIndexArray* roomItems = currentRoom->containedItemReferents;
 
 	if (roomItems != nullptr)

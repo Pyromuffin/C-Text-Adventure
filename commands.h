@@ -20,6 +20,7 @@ typedef enum CommandLabel
     kCommandMove,
     kCommandYes,
     kCommandNo,
+	kCommandSave,
     kCommandCount,
     kCommandInvalid = -1,
 } CommandLabel;
