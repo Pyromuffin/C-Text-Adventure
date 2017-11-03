@@ -4,10 +4,10 @@
 
 class GameState
 {
-private:
+public:
 	static GameState instance;
 
-public:
+
 	RoomLabel currentRoom = kDefaultRoom;
 	uint sneezePoints = 0;
 	// current inventory duh

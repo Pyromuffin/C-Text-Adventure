@@ -139,6 +139,9 @@ void ExecuteSaveCommand(const Command* me, Referent* subject, Referent* object)
 
 	cereal::JSONOutputArchive oarchive(saveFile);
 
+	oarchive(cereal::make_nvp("Game State", GameState::instance));
+
+
 	for (int i = 0; i < kRoomCount; i++)
 	{
 		if (RoomScript::ms_roomScripts[i] != nullptr)
@@ -149,6 +152,7 @@ void ExecuteSaveCommand(const Command* me, Referent* subject, Referent* object)
 		}
 	}
 
+	
 }
 
 
@@ -234,7 +238,7 @@ void RegisterCommands()
 
 	Command saveCommand;
 	saveCommand.parseFlags = kParseFlagImplicitObject;
-	saveCommand.execFunction = ExecuteMoveCommand;
+	saveCommand.execFunction = ExecuteSaveCommand;
 	RegisterCommand(kCommandSave, &saveCommand);
 
 	Referent saveReferent;
