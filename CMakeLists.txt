@@ -4,7 +4,17 @@ project(C_Text_Adventure)
 #set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "/EHsc /std:c++latest /wd4996")
 
+set(SDL2_DIR "SDL")
+set(SDL2_TTF_DIR "SDL_TTF") 
+
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+
+find_package(SDL2_TTF REQUIRED)
+include_directories(${SDL2_TTF_INCLUDE_DIRS})
+
 include_directories("cereal/")
+
 
 set(SOURCE_FILES
         main.cpp
@@ -15,15 +25,6 @@ set(SOURCE_FILES
 		)
 
 
-#string(REGEX REPLACE "([^;]+)" "${CMAKE_CURRENT_SOURCE_DIR}/\\1.ixx" MODULE_FILE_PATHS "${MODULE_FILES}")
-#string(REGEX REPLACE "([^;]+)" "${CMAKE_CURRENT_BINARY_DIR}/\\1.obj" OBJECT_FILE_PATHS "${MODULE_FILES}")
-
-#add_custom_target(MODULES cl.exe /experimental:module /nologo -c ${MODULE_FILE_PATHS}
-#WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#)
 
 add_executable(C_Text_Adventure ${SOURCE_FILES})
-
-#target_link_libraries(C_Text_Adventure ${OBJECT_FILE_PATHS})
-
-#add_dependencies(C_Text_Adventure MODULES)
+target_link_libraries(C_Text_Adventure ${SDL2_LIBRARIES} ${SDL2_TTF_LIBRARIES})

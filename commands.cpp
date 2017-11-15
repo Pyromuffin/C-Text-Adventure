@@ -151,8 +151,30 @@ void ExecuteSaveCommand(const Command* me, Referent* subject, Referent* object)
 			oarchive(nvp);
 		}
 	}
+}
 
-	
+void ExecuteLoadCommand(const Command* me, Referent* subject, Referent* object)
+{
+	// save game state and room scripts
+	std::ifstream saveFile;
+	saveFile.open("C:\\lomg\\potato.txt");
+
+	cereal::JSONInputArchive iarchive(saveFile);
+
+	iarchive(cereal::make_nvp("Game State", GameState::instance));
+
+	for (int i = 0; i < kRoomCount; i++)
+	{
+		if (RoomScript::ms_roomScripts[i] != nullptr)
+		{
+			auto room = GetRoomReferent((RoomLabel)i);
+			auto nvp = cereal::make_nvp(room->shortName, *RoomScript::ms_roomScripts[i]);
+			iarchive(nvp);
+		}
+	}
+
+
+	PrintRoomDescription(GameState::GetCurrentRoomLabel());
 }
 
 
@@ -248,6 +270,20 @@ void RegisterCommands()
 	LIST_IDENTIFIERS(saveReferent, "save");
 
 	RegisterReferent(&saveReferent);
+
+	Command loadCommand;
+	loadCommand.parseFlags = kParseFlagImplicitObject;
+	loadCommand.execFunction = ExecuteLoadCommand;
+	RegisterCommand(kCommandLoad, &loadCommand);
+
+	Referent loadReferent;
+	loadReferent.type = kReferentVerb;
+	loadReferent.shortName = "load";
+	loadReferent.unionValues.command = kCommandLoad;
+	LIST_IDENTIFIERS(loadReferent, "load");
+
+	RegisterReferent(&loadReferent);
+
 
 	/*
     Command quitCommand;

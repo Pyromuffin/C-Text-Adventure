@@ -1,3 +1,5 @@
+#pragma once
+
 #include "room.h"
 #include "utility.h"
 #include "cereal\archives\json.hpp"
@@ -10,6 +12,7 @@ public:
 
 	RoomLabel currentRoom = kDefaultRoom;
 	uint sneezePoints = 0;
+	bool speedCheck = false;
 	// current inventory duh
 
 	static Room* GetCurrentRoomPtr()
@@ -25,6 +28,11 @@ public:
 	static void SetCurrentRoom(RoomLabel label)
 	{
 		instance.currentRoom = label;
+	}
+
+	static bool GetSpeedCheck()
+	{
+		return instance.speedCheck;
 	}
 
 	template<class Archive>
