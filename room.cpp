@@ -6,6 +6,7 @@
 #include "IndexVector.h"
 #include "GameScript.h"
 #include "GameState.h"
+#include "TextProcessing.h"
 
 Room g_AllTheRooms[kRoomCount];
 
@@ -67,13 +68,10 @@ void PrintRoomDescription( RoomLabel label )
 	const size_t BUFFER_SIZE = 1000;
 
     Room* room = GetRoomPtr(label);
-    printf("%s\n", room->description);
+    Print("%s\n", room->description);
 
 	RoomScript* script = GetRoomScript(GameState::GetCurrentRoomLabel());
 	if (script) script->PrintAdditionalDescription();
-
-
-
 
 
 	char buf[BUFFER_SIZE];
@@ -100,7 +98,7 @@ void PrintRoomDescription( RoomLabel label )
 
 	if (explicitItem)
 	{
-		printf("Also here is %s.\n", buf);
+		Print("Also here is %s.\n", buf);
 	}
 
 }
@@ -121,7 +119,7 @@ void PrintArrivalGreeting( RoomLabel label )
 {
     Room* room = GetRoomPtr(label);
 	
-    printf("You arrive in %s.\n", GetRoomReferent(label)->shortName);
+    Print("You arrive in %s.\n", GetRoomReferent(label)->shortName);
     if( !room->visited)
     {
         PrintRoomDescription(label);

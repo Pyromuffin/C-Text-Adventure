@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <ctime>
-#include <iostream>
+#include <algorithm>
 
 #include <SDL.h>
 #include "SDL_TTF\include\SDL_ttf.h"
@@ -12,21 +12,24 @@
 #include "items.h"
 #include "StringHash.h"
 #include "GameState.h"
+#include "TextProcessing.h"
 
-static SDL_Window* s_window;
-static SDL_Renderer* s_renderer;
-static TTF_Font* s_font;
+SDL_Window* g_window;
+SDL_Renderer* g_renderer;
+TTF_Font* g_font;
+SDL_Surface* g_backbuffer;
 
 #define RALEWAY_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Raleway\\Raleway-Regular.ttf"
 
 static void InitSDL()
 {
 	SDL_Init(SDL_INIT_EVERYTHING);
-	s_window = SDL_CreateWindow("C Text Adventure", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1000, 500, 0);
-	s_renderer = SDL_CreateRenderer(s_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	g_window = SDL_CreateWindow("C Text Adventure", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1000, 500, 0);
+	g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
 	TTF_Init();
-	s_font = TTF_OpenFont(RALEWAY_PATH, 24);
+	g_font = TTF_OpenFont(RALEWAY_PATH, 24);
+	g_backbuffer = SDL_DuplicateSurface(SDL_GetWindowSurface(g_window));
 }
 
 static void Init()
@@ -38,13 +41,14 @@ static void Init()
     MakeSomeItems();
     MakeDirectionReferents();
 	InitSDL();
+	InitText();
 }
 
 static void CleanUp()
 {
-	SDL_DestroyRenderer(s_renderer);
-	SDL_DestroyWindow(s_window);
-	TTF_CloseFont(s_font);
+	SDL_DestroyRenderer(g_renderer);
+	SDL_DestroyWindow(g_window);
+	TTF_CloseFont(g_font);
     CheckForVectorLeaks();
 }
 
@@ -93,33 +97,33 @@ static void SpeedCheck(char *command, int bufSize)
 }
 
 
-static void UpdateScreenText(char* commandString)
+void ClearBackbuffer()
 {
-	SDL_Color white{ 255,255,255,255 };
+	SDL_LockSurface(g_backbuffer);
+	memset(g_backbuffer->pixels, 0, g_backbuffer->format->BytesPerPixel  * g_backbuffer->w * g_backbuffer->h);
+	SDL_UnlockSurface(g_backbuffer);
+}
 
-	auto surf = TTF_RenderText_Blended(s_font, commandString, white);
-	SDL_Rect srcRect{ 0,0, surf->w, surf->h };
-	SDL_Rect dstRect{ 500, 250, surf->w, surf->h };
-	auto texture = SDL_CreateTextureFromSurface(s_renderer, surf);
-
-	SDL_RenderClear(s_renderer);
-	SDL_RenderCopy(s_renderer, texture, &srcRect, &dstRect);
-	SDL_RenderPresent(s_renderer);
+void PresentBackbuffer()
+{
+	auto tex = SDL_CreateTextureFromSurface(g_renderer, g_backbuffer);
+	SDL_RenderCopy(g_renderer, tex, nullptr, nullptr);
+	SDL_RenderPresent(g_renderer);
+	SDL_DestroyTexture(tex);
 }
 
 
-static int backspaceRepeatDelay = 500;
-static int backspaceRepeatRate = 200;
+static void UpdateScreenText(char* commandString)
+{
+	ClearBackbuffer();
+	RenderScreenText(commandString);
+	PresentBackbuffer();
+}
+
 
 static void EventLoop(char* commandString)
 {
 	int bufferPos = 0;
-	uint lastBackspace = 0;
-	uint firstBackspace = 0;
-	
-	bool backspacing = false;
-	bool repeatingBackspace = false;
-	bool waitingForNextRepeat = false;
 
 	SDL_Event e;
 	bool waiting = true;
@@ -129,6 +133,7 @@ static void EventLoop(char* commandString)
 		if (e.type == SDL_QUIT)
 		{
 			SetProgramRunningMode(ProgramRunningMode::kQuitting);
+			waiting = false;
 		}
 
 		if (e.type == SDL_KEYDOWN)
@@ -141,45 +146,21 @@ static void EventLoop(char* commandString)
 			}
 			else if (keycode == SDLK_BACKSPACE)
 			{
-				if (backspacing)
-				{
-					repeatingBackspace = (e.key.timestamp - firstBackspace) > backspaceRepeatDelay;
-					waitingForNextRepeat = repeatingBackspace && (e.key.timestamp - lastBackspace) > backspaceRepeatRate;
-
-					if (!repeatingBackspace || waitingForNextRepeat)
-					{
-						continue;
-					}
-					else
-					{
-						lastBackspace =
-					}
-				}
-
-
-				if (bufferPos > 1)
-				{
-					backspacing = true;
-					lastBackspace = e.key.timestamp;
-					commandString[--bufferPos] = '\0';
-					UpdateScreenText(commandString);
-				}
+				commandString[--bufferPos] = '\0';
+				bufferPos = std::max(bufferPos, 0);
+				UpdateScreenText(commandString);
 			}
-			else if (keycode <= 'z' && keycode > 0)
+			else if (keycode <= 'z' && keycode >= ' ')
 			{
 				char key = keycode;
+				if (e.key.keysym.mod & KMOD_SHIFT != 0 && key >= 'a' && key <= 'z')
+				{
+					key -= 'a';
+					key += 'A';
+				}
 				commandString[bufferPos++] = key;
 				commandString[bufferPos] = '\0';
 				UpdateScreenText(commandString);
-			}
-		}
-
-		if (e.type == SDL_KEYUP)
-		{
-			auto keycode = e.key.keysym.sym;
-			if (keycode == SDLK_BACKSPACE)
-			{
-				backspacing = false;
 			}
 		}
 	}
@@ -197,12 +178,10 @@ int main(int argc, char *argv[])
 
     while (GetProgramRunningMode() == kPlaying || GetProgramRunningMode() == kDead)
     {
-        printf("\n> ");
-        fflush(stdout);
-
 		EventLoop(commandString);
-		printf(commandString);
-
+		Print("\n> %s\n", commandString);
+		
+	
         if (commandString[0] == '\n')
             continue;
 
@@ -222,8 +201,12 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("What's that !?\n");
+            Print("What's that !?\n");
         }
+
+		ClearBackbuffer();
+		RenderScreenText("");
+		PresentBackbuffer();
     }
 
     CleanUp();
