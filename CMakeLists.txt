@@ -2,18 +2,16 @@ cmake_minimum_required(VERSION 3.7)
 project(C_Text_Adventure)
 
 #set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "/EHsc /std:c++latest /wd4996")
-
-set(SDL2_DIR "SDL")
-set(SDL2_TTF_DIR "SDL_TTF") 
-
-find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIRS})
-
-find_package(SDL2_TTF REQUIRED)
-include_directories(${SDL2_TTF_INCLUDE_DIRS})
+set(CMAKE_CXX_FLAGS "/EHsc /std:c++latest /wd4996 /WX" )
 
 include_directories("cereal/")
+
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/" ${CMAKE_MODULE_PATH})
+
+set(SFML_ROOT "${CMAKE_SOURCE_DIR}/SFML/" )
+set(SFML_STATIC_LIBRARIES TRUE)
+find_package(SFML COMPONENTS graphics window system REQUIRED)
+include_directories(${SFML_INCLUDE_DIR})
 
 
 set(SOURCE_FILES
@@ -27,4 +25,4 @@ set(SOURCE_FILES
 
 
 add_executable(C_Text_Adventure ${SOURCE_FILES})
-target_link_libraries(C_Text_Adventure ${SDL2_LIBRARIES} ${SDL2_TTF_LIBRARIES})
+target_link_libraries(C_Text_Adventure ${SFML_LIBRARIES} ${SFML_DEPENDENCIES})

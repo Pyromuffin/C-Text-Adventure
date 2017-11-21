@@ -2,8 +2,8 @@
 #include <ctime>
 #include <algorithm>
 
-#include <SDL.h>
-#include "SDL_TTF\include\SDL_ttf.h"
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
 
 #include "room.h"
 #include "parse.h"
@@ -14,22 +14,16 @@
 #include "GameState.h"
 #include "TextProcessing.h"
 
-SDL_Window* g_window;
-SDL_Renderer* g_renderer;
-TTF_Font* g_font;
-SDL_Surface* g_backbuffer;
+
+static sf::RenderWindow* window; 
+static sf::Font font;
 
 #define RALEWAY_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Raleway\\Raleway-Regular.ttf"
 
-static void InitSDL()
+static void InitSFML()
 {
-	SDL_Init(SDL_INIT_EVERYTHING);
-	g_window = SDL_CreateWindow("C Text Adventure", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1000, 500, 0);
-	g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
-	TTF_Init();
-	g_font = TTF_OpenFont(RALEWAY_PATH, 24);
-	g_backbuffer = SDL_DuplicateSurface(SDL_GetWindowSurface(g_window));
+	window = new sf::RenderWindow(sf::VideoMode(1000, 600), "C-Text-Adventure"); // window cannot be statically constructed for reasons.
+	font.loadFromFile(RALEWAY_PATH);
 }
 
 static void Init()
@@ -40,15 +34,14 @@ static void Init()
     MakeRooms();
     MakeSomeItems();
     MakeDirectionReferents();
-	InitSDL();
 	InitText();
+
+	InitSFML();
 }
 
 static void CleanUp()
 {
-	SDL_DestroyRenderer(g_renderer);
-	SDL_DestroyWindow(g_window);
-	TTF_CloseFont(g_font);
+	delete window;
     CheckForVectorLeaks();
 }
 
@@ -97,77 +90,94 @@ static void SpeedCheck(char *command, int bufSize)
 }
 
 
-void ClearBackbuffer()
+char GetChar(sf::Keyboard::Key keycode)
 {
-	SDL_LockSurface(g_backbuffer);
-	memset(g_backbuffer->pixels, 0, g_backbuffer->format->BytesPerPixel  * g_backbuffer->w * g_backbuffer->h);
-	SDL_UnlockSurface(g_backbuffer);
-}
-
-void PresentBackbuffer()
-{
-	auto tex = SDL_CreateTextureFromSurface(g_renderer, g_backbuffer);
-	SDL_RenderCopy(g_renderer, tex, nullptr, nullptr);
-	SDL_RenderPresent(g_renderer);
-	SDL_DestroyTexture(tex);
-}
-
-
-static void UpdateScreenText(char* commandString)
-{
-	ClearBackbuffer();
-	RenderScreenText(commandString);
-	PresentBackbuffer();
-}
-
-
-static void EventLoop(char* commandString)
-{
-	int bufferPos = 0;
-
-	SDL_Event e;
-	bool waiting = true;
-	while (waiting)
+	if (keycode >= sf::Keyboard::Key::A && keycode <= sf::Keyboard::Key::Z)
 	{
-		SDL_PollEvent(&e);
-		if (e.type == SDL_QUIT)
+		auto keyOffset = keycode - sf::Keyboard::Key::A;
+		char key = 'a' + keyOffset;
+		return key;
+	}
+	else if (keycode == sf::Keyboard::Key::Space)
+	{
+		return ' ';
+	}
+
+	return '\0';
+}
+
+
+static bool HandleEvents(char* commandString)
+{
+	static int bufferPos = 0;
+	bool processCommand = false;
+	sf::Event e;
+
+	while (window->pollEvent(e))
+	{
+		if (e.type == sf::Event::Closed)
 		{
+			window->close();
 			SetProgramRunningMode(ProgramRunningMode::kQuitting);
-			waiting = false;
 		}
 
-		if (e.type == SDL_KEYDOWN)
+		if (e.type == sf::Event::KeyPressed)
 		{
-			auto keycode = e.key.keysym.sym;
+			auto keycode = e.key.code;
+			char c = GetChar(keycode);
 
-			if ( keycode == SDLK_RETURN)
+			if (keycode == sf::Keyboard::Return)
 			{
-				waiting = false;
+				processCommand = true;
 			}
-			else if (keycode == SDLK_BACKSPACE)
+			else if (keycode == sf::Keyboard::BackSpace)
 			{
 				commandString[--bufferPos] = '\0';
 				bufferPos = std::max(bufferPos, 0);
-				UpdateScreenText(commandString);
 			}
-			else if (keycode <= 'z' && keycode >= ' ')
+			else if (c != '\0')
 			{
-				char key = keycode;
-				if (e.key.keysym.mod & KMOD_SHIFT != 0 && key >= 'a' && key <= 'z')
+				if (e.key.shift && c >= 'a' && c <= 'z')
 				{
-					key -= 'a';
-					key += 'A';
+					c -= 'a';
+					c += 'A';
 				}
-				commandString[bufferPos++] = key;
+				commandString[bufferPos++] = c;
 				commandString[bufferPos] = '\0';
-				UpdateScreenText(commandString);
 			}
 		}
 	}
 
 	commandString[bufferPos] = '\0';
+	return processCommand;
 }
 
+
+void RenderText(char* commandString)
+{
+	static sf::Text carrot{ ">", font };
+	static const int padding = 15;
+	static const int fontSize = 30;
+
+	float carrotKerning = font.getKerning('>', commandString[0], fontSize); // TODO KERNING DOESNT WORK FOR SOME REASAON
+	carrotKerning += 5;
+	float carrotWidth = font.getGlyph('>', fontSize, false).advance;
+	auto windowSize = window->getSize();
+	auto lineSpace = font.getLineSpacing(fontSize);
+
+	sf::Text text = sf::Text(commandString, font);
+
+	carrot.setPosition(padding, windowSize.y - lineSpace - padding);
+	text.setPosition(padding + carrotKerning + carrotWidth, windowSize.y - lineSpace - padding);
+
+	sf::Text previous{ GetTextBuffer(), font };
+
+	window->clear();
+	window->draw(carrot);
+	window->draw(text);
+	window->draw(previous);
+	window->display();
+}
 
 int main(int argc, char *argv[])
 {
@@ -178,35 +188,33 @@ int main(int argc, char *argv[])
 
     while (GetProgramRunningMode() == kPlaying || GetProgramRunningMode() == kDead)
     {
-		EventLoop(commandString);
-		Print("\n> %s\n", commandString);
-		
+		bool processCommand = HandleEvents(commandString);
 	
-        if (commandString[0] == '\n')
-            continue;
+		if (processCommand)
+		{
+			Print("\n>%s\n", commandString);
 
-        TrimSelf(commandString);
-		SetDebugGlobals(commandString);
+			TrimSelf(commandString);
+			SetDebugGlobals(commandString);
 
-		auto inputTokens = AllocateTokenString(commandString);
+			auto inputTokens = AllocateTokenString(commandString);
 
-		ParseResult result = ParseInputString(inputTokens.get());
-		fflush(stdout);
+			ParseResult result = ParseInputString(inputTokens.get());
+			fflush(stdout);
 
-        if (result.valid)
-        {
-            const Command *command = GetCommand(result.commandLabel);
-            command->execFunction(command, result.subject, result.object);
-            fflush(stdout);
-        }
-        else
-        {
-            Print("What's that !?\n");
-        }
+			if (result.valid)
+			{
+				const Command *command = GetCommand(result.commandLabel);
+				command->execFunction(command, result.subject, result.object);
+				fflush(stdout);
+			}
+			else
+			{
+				Print("What's that !?\n");
+			}
+		}
 
-		ClearBackbuffer();
-		RenderScreenText("");
-		PresentBackbuffer();
+		RenderText(commandString);
     }
 
     CleanUp();

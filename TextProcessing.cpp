@@ -4,15 +4,8 @@
 #include <memory.h>
 #include <vector>
 
-#include <SDL.h>
-#include "SDL_TTF\include\SDL_ttf.h"
-
 #include "TextProcessing.h"
 
-extern SDL_Window* g_window;
-extern SDL_Renderer* g_renderer;
-extern SDL_Surface* g_backbuffer;
-extern TTF_Font* g_font;
 
 static char* s_textBuffer = nullptr;
 
@@ -57,7 +50,7 @@ void Print(char* formatString,  ...)
 	va_end(argList);
 }
 
-
+/*
 struct SurfingBoy
 {
 	SDL_Surface* surf;
@@ -97,11 +90,26 @@ void GetLine(char* text, bool &done, int& nextStart, int& numberOfLines )
 	return;
 }
 
+bool NeedsWrapping(char* text, int windowWidth, int padding)
+{
+	int width, height;
+	TTF_SizeText(g_font, text, &width, &height);
+	return width >= windowWidth + padding * 2;
+}
+
 
 void RenderScreenText(char* commandString)
 {
 	static const SDL_Color white{ 255,255,255,255 };
-	/*
+	int yOffset = 75;
+	int newLineSpace = 20;
+	int lineSpacing = 0;
+	int windowPadding = 15;
+	int windowWidth, windowHeight;
+	SDL_GetWindowSize(g_window, &windowWidth, &windowHeight);
+
+
+	
 	std::vector<SurfingBoy> surfs;
 
 	int bufferPos = 0;
@@ -116,10 +124,11 @@ void RenderScreenText(char* commandString)
 		
 		if (!done) s_textBuffer[lineStart + nextStart -1] = '\0';
 		
-		auto surf = TTF_RenderText_Blended_Wrapped(g_font, &s_textBuffer[lineStart], white);
+	
+
+		auto surf = TTF_RenderText_Blended(g_font, &s_textBuffer[lineStart], white);
 		
 		if (!done) s_textBuffer[lineStart + nextStart -1] = '\n';
-
 
 		SurfingBoy boy;
 		boy.newLines = numberOfLines;
@@ -148,25 +157,12 @@ void RenderScreenText(char* commandString)
 		SDL_BlitSurface(surf.surf, &srcRect, g_backbuffer, &dstRect);
 		SDL_FreeSurface(surf.surf);
 	}
-	*/
-
-
-
-	int yOffset = 75;
-	int newLineSpace = 20;
-	int lineSpacing = 0;
-	int windowPadding = 15;
-	int windowWidth, windowHeight;
-	SDL_GetWindowSize(g_window, &windowWidth, &windowHeight);
-
-	{
-		auto surf = TTF_RenderText_Blended_Wrapped(g_font, s_textBuffer, white, windowWidth - windowPadding * 2);
-		SDL_Rect srcRect{ 0,0, surf->w, surf->h };
-		SDL_Rect dstRect{ windowPadding, windowHeight - windowPadding - surf->h, surf->w, surf->h };
-		SDL_BlitSurface(surf, &srcRect, g_backbuffer, &dstRect);
-		SDL_FreeSurface(surf);
-	}
 	
+
+
+
+	
+
 
 	// render >
 	auto pointySurf = TTF_RenderText_Blended(g_font, ">", white);
@@ -185,9 +181,12 @@ void RenderScreenText(char* commandString)
 		return;
 	}
 
+	// kerning doesn't work so i guess we die.
+
 	auto surf = TTF_RenderText_Blended(g_font, commandString, white);
 	SDL_Rect srcRect{ 0,0, surf->w, surf->h };
-	SDL_Rect dstRect{ windowPadding + pointyWidth, windowHeight - windowPadding - surf->h, surf->w, surf->h };
+	SDL_Rect dstRect{ windowPadding + pointyWidth + 5, windowHeight - windowPadding - surf->h, surf->w, surf->h };
 	SDL_BlitSurface(surf, &srcRect, g_backbuffer, &dstRect);
 	SDL_FreeSurface(surf);
 }
+*/
