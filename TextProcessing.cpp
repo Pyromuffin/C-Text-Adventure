@@ -4,6 +4,8 @@
 #include <memory.h>
 #include <vector>
 
+#include <SFML/Window.hpp>
+
 #include "TextProcessing.h"
 
 
@@ -50,6 +52,55 @@ void Print(char* formatString,  ...)
 	va_end(argList);
 }
 
+/*
+void HandleKeyDown(sf::Event e)
+{
+	auto keycode = e.key.code;
+	char c = GetChar(keycode);
+
+	if (keycode == sf::Keyboard::Return)
+	{
+		processCommand = true;
+	}
+	else if (keycode == sf::Keyboard::BackSpace)
+	{
+		commandString[--s_commandStringPos] = '\0';
+		s_commandStringPos = std::max(s_commandStringPos, 0);
+		s_blinkTimer.ResetBlinkStatus();
+	}
+	else if (keycode == sf::Keyboard::Left)
+	{
+		s_commandStringPos = std::max(0, s_commandStringPos - 1);
+		s_blinkTimer.ResetBlinkStatus();
+	}
+	else if (keycode == sf::Keyboard::Right)
+	{
+		s_commandStringPos = std::min((int)strlen(commandString), s_commandStringPos + 1);
+		s_blinkTimer.ResetBlinkStatus();
+	}
+	else if (c != '\0')
+	{
+		if (e.key.shift && c >= 'a' && c <= 'z')
+		{
+			c -= 'a';
+			c += 'A';
+		}
+
+		// copy string one character place down.
+		int length = strlen(commandString);
+		for (int i = 0; i < length - s_commandStringPos + 1; i++)
+		{
+			int index = length - i;
+			commandString[index + 1] = commandString[index];
+		}
+
+		commandString[s_commandStringPos] = c;
+		s_commandStringPos++;
+		s_blinkTimer.ResetBlinkStatus();
+
+	}
+}
+*/
 /*
 struct SurfingBoy
 {
