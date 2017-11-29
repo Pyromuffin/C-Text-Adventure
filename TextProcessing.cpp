@@ -1,12 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <memory.h>
-#include <vector>
 
 #include <SFML/Window.hpp>
 
 #include "TextProcessing.h"
+#include "SFML/Graphics/Font.hpp"
 
 
 static char* s_textBuffer = nullptr;
@@ -34,7 +33,7 @@ void DoubleTextBuffer()
 	s_textBuffer = (char*)mem;
 }
 
-void Print(char* formatString,  ...)
+void Print(const char* formatString, ...)
 {
 	va_list argList;
 	int remainingBuffer = s_currentBufferSize - s_bufferIndex;
@@ -52,11 +51,29 @@ void Print(char* formatString,  ...)
 	va_end(argList);
 }
 
-/*
-void HandleKeyDown(sf::Event e)
+
+char GetCharFromKeycode(const sf::Keyboard::Key keycode)
 {
-	auto keycode = e.key.code;
-	char c = GetChar(keycode);
+	if (keycode >= sf::Keyboard::Key::A && keycode <= sf::Keyboard::Key::Z)
+	{
+		const auto keyOffset = keycode - sf::Keyboard::Key::A;
+		const char key = 'a' + keyOffset;
+		return key;
+	}
+	else if (keycode == sf::Keyboard::Key::Space)
+	{
+		return ' ';
+	}
+
+	return '\0';
+}
+
+
+bool HandleKeyDown(const sf::Event& e, CommandString& commandString)
+{
+	bool processCommand = false;
+	const auto keycode = e.key.code;
+	char c = GetCharFromKeycode(keycode);
 
 	if (keycode == sf::Keyboard::Return)
 	{
@@ -64,19 +81,44 @@ void HandleKeyDown(sf::Event e)
 	}
 	else if (keycode == sf::Keyboard::BackSpace)
 	{
-		commandString[--s_commandStringPos] = '\0';
-		s_commandStringPos = std::max(s_commandStringPos, 0);
-		s_blinkTimer.ResetBlinkStatus();
+		commandString.DeleteCharacterAtCursor();
+		commandString.blinkTimer.ResetBlinkStatus();
 	}
 	else if (keycode == sf::Keyboard::Left)
 	{
-		s_commandStringPos = std::max(0, s_commandStringPos - 1);
-		s_blinkTimer.ResetBlinkStatus();
+		if (e.key.control)
+		{
+			commandString.SeekLeftToNextWord();
+		}
+		else
+		{
+			commandString.MoveCursor(-1);
+		}
+
+		commandString.blinkTimer.ResetBlinkStatus();
 	}
 	else if (keycode == sf::Keyboard::Right)
 	{
-		s_commandStringPos = std::min((int)strlen(commandString), s_commandStringPos + 1);
-		s_blinkTimer.ResetBlinkStatus();
+		if (e.key.control)
+		{
+			commandString.SeekRightToNextWord();
+		}
+		else
+		{
+			commandString.MoveCursor(1);
+		}
+
+		commandString.blinkTimer.ResetBlinkStatus();
+	}
+	else if (keycode == sf::Keyboard::Home)
+	{
+		commandString.SeekToBeginning();
+		commandString.blinkTimer.ResetBlinkStatus();
+	}
+	else if (keycode == sf::Keyboard::End)
+	{
+		commandString.SeekToEnd();
+		commandString.blinkTimer.ResetBlinkStatus();
 	}
 	else if (c != '\0')
 	{
@@ -86,21 +128,13 @@ void HandleKeyDown(sf::Event e)
 			c += 'A';
 		}
 
-		// copy string one character place down.
-		int length = strlen(commandString);
-		for (int i = 0; i < length - s_commandStringPos + 1; i++)
-		{
-			int index = length - i;
-			commandString[index + 1] = commandString[index];
-		}
-
-		commandString[s_commandStringPos] = c;
-		s_commandStringPos++;
-		s_blinkTimer.ResetBlinkStatus();
-
+		commandString.InsertCharacterAtCursor(c);
+		commandString.blinkTimer.ResetBlinkStatus();
 	}
+
+	return processCommand;
 }
-*/
+
 /*
 struct SurfingBoy
 {
@@ -241,3 +275,117 @@ void RenderScreenText(char* commandString)
 	SDL_FreeSurface(surf);
 }
 */
+
+void CommandString::Reset()
+{
+	m_buffer[0] = '>';
+	m_buffer[1] = ' ';
+	m_buffer[2] = '\0';
+
+	m_cursorPosition = cursorStartPosition;
+	m_length = cursorStartPosition;
+}
+
+void CommandString::MoveCursor(const int amount)
+{
+	m_cursorPosition = std::clamp(m_cursorPosition + amount, cursorStartPosition, m_length);
+}
+
+void CommandString::SeekRightToNextWord()
+{
+	MoveCursor(1);
+
+	while (m_cursorPosition < m_length)
+	{
+		const bool textUnderCursor = m_buffer[m_cursorPosition] != ' ';
+		const bool spaceToTheLeft = m_buffer[m_cursorPosition - 1] == ' ';
+
+		if (textUnderCursor && spaceToTheLeft)
+			break;
+		MoveCursor(1);
+	}
+}
+
+void CommandString::SeekLeftToNextWord()
+{
+	// check that the value under the cursor is a character, and the value to the left is a space.
+	MoveCursor(-1);
+
+	while (m_cursorPosition > cursorStartPosition)
+	{
+		const bool textUnderCursor = m_buffer[m_cursorPosition] != ' ';
+		const bool spaceToTheLeft = m_buffer[m_cursorPosition - 1] == ' ';
+		
+		if (textUnderCursor && spaceToTheLeft)
+			break;
+		MoveCursor(-1);
+	}
+}
+
+void CommandString::SeekToBeginning()
+{
+	m_cursorPosition = cursorStartPosition;
+}
+
+void CommandString::SeekToEnd()
+{
+	m_cursorPosition = m_length;
+}
+
+void CommandString::InsertCharacterAtCursor(const char c)
+{
+	// copy string one character place down.
+	for (int i = 0; i < m_length - m_cursorPosition + 1; i++)
+	{
+		const int index = m_length - i;
+		m_buffer[index + 1] = m_buffer[index];
+	}
+
+	m_buffer[m_cursorPosition] = c;
+	m_length++;
+	MoveCursor(1);
+}
+
+void CommandString::DeleteCharacterAtCursor()
+{
+	if (m_cursorPosition == cursorStartPosition)
+		return;
+
+	for (int index = m_cursorPosition - 1; index < m_length; index++)
+	{
+		m_buffer[index] = m_buffer[index + 1];
+	}
+
+	m_length--;
+	MoveCursor(-1);
+}
+
+
+
+int GetBufferStartOfVisibleText( sf::Window* window, sf::Font* font, const int fontSize)
+{
+	// first we need to know how many lines of text fit in the window.
+	const float windowHeight = window->getSize().y;
+	const float glyphHeight = font->getLineSpacing(fontSize);
+
+	const int numberOfLinesInWindow = static_cast<int>(windowHeight / glyphHeight) - 1; // minus one for the command string
+	// actually here are some dragons because 
+	
+	int foundNewlines = 0;
+	int index;
+	// now go back through the buffer until we find number of lines \n's
+	for(index = s_bufferIndex; index >= 0; index--)
+	{
+		if( s_textBuffer[index] == '\n' )
+		{
+			foundNewlines++;
+			if (foundNewlines == numberOfLinesInWindow)
+			{
+				index++; // go past that newline otherwise we'll just be printing a new line and nothing else at the top row.
+				break;
+			}
+		}
+	}
+	
+	return index;
+}
