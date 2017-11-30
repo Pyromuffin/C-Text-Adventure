@@ -4,6 +4,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
+#include "utility.h"
 #include "room.h"
 #include "parse.h"
 #include "IndexVector.h"
@@ -22,7 +23,7 @@ static sf::Font font;
 
 static void InitSFML()
 {
-	window = new sf::RenderWindow(sf::VideoMode(1000, 600), "C-Text-Adventure"); // window cannot be statically constructed for reasons.
+	window = new sf::RenderWindow(sf::VideoMode(1000, 600), "C-Text-Adventure" ); // window cannot be statically constructed for reasons.
 	font.loadFromFile(INCONSOLATA_PATH);
 }
 
@@ -89,7 +90,7 @@ static void SpeedCheck(char *command, int bufSize)
 	*/
 }
 
-
+static int windowScrollOffset = 0;
 
 static bool HandleEvents(CommandString& commandString)
 {
@@ -106,6 +107,12 @@ static bool HandleEvents(CommandString& commandString)
 			break;
 		case sf::Event::KeyPressed:
 			processCommand = HandleKeyDown(e, commandString);
+			break;
+		case sf::Event::MouseWheelScrolled:
+			windowScrollOffset += e.mouseWheelScroll.delta;
+		case sf::Event::Resized:
+			sf::FloatRect visibleArea(0, 0, e.size.width, e.size.height);
+			window->setView(sf::View(visibleArea));
 			break;
 		}
 	}
@@ -130,19 +137,29 @@ void RenderText(CommandString& commandString)
 	const int cursorPos = commandString.GetCursorPosition();
 
 	char* allTheText = GetTextBuffer();
-	const int visibleOffset = GetBufferStartOfVisibleText(window, &font, 30);
+	const int visibleOffset = GetBufferStartOfVisibleText(window, &font, 30, windowScrollOffset);
 	char* windowedText = &allTheText[visibleOffset];
+	auto lines = DoWordWrappingOnBlockOfText(window, &font, 30, windowedText, padding);
 
 	sf::Text text = sf::Text(commandString.GetBuffer(), font);
-	sf::Text previous{ windowedText, font };
-
+	
 	cursor.setPosition(padding + cursorPos * glyphSpace - halfGlyph, windowSize.y - lineSpace - padding);
 	text.setPosition(padding, windowSize.y - lineSpace - padding);
-	previous.setPosition(padding, 0);
 	
 	window->clear();
 	window->draw(text);
-	window->draw(previous);
+
+	float linePosition = windowSize.y - lineSpace * 2 - padding;
+	int lineCount = 0;
+
+	for (auto& line : reverse(lines))
+	{
+		auto drawLine = sf::Text{ line, font };
+		drawLine.setPosition(padding, linePosition - lineSpace * lineCount);
+		window->draw(drawLine);
+		lineCount++;
+	}
+
 	if (commandString.blinkTimer.GetBlinkStatus()) window->draw(cursor);
 	window->display();
 }
