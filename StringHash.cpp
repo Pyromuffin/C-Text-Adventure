@@ -16,17 +16,14 @@ hash = hash × FNV_prime
 return hash
 */
 
-static const uint FNV_OFFSET = 2166136261;
-static const uint FNV_PRIME = 16777619;
-
 constexpr Hash HashString(const char *string)
 {
-	Hash hash = FNV_OFFSET;
+	Hash hash = 2166136261UL;
 
 	for (int i = 0; string[i] != '\0'; i++)
 	{
 		hash = hash ^ string[i];
-		hash = hash * FNV_PRIME;
+		hash = hash * 16777619UL;
 	}
 
 	return hash;
