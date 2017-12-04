@@ -1,6 +1,5 @@
 #include "MarkUp.h"
 #include "utility.h"
-#include "CompileTimeStrings.h"
 
 enum class Tag
 {
@@ -15,14 +14,14 @@ static constexpr char* tagText[] =
 	"blue",
 };
 
+/*
 static constexpr const Hash tagHashes[] =
 {
 	ConstHashString(tagText[0]),
 	ConstHashString(tagText[1]),
 };
-
 static_assert(ARRAY_COUNT(tagText) == (int)Tag::count);
-
+*/
 
 
 void DrawRedText(sf::Text& drawText)
@@ -42,6 +41,7 @@ const TagFunction tagFunctions[]
 };
 static_assert(ARRAY_COUNT(tagFunctions) == (int)Tag::count);
 
+/*
 std::vector<sf::Text> ApplyMarkup(std::string& line, std::vector<Tag>& tagStack)
 {
 	// parse a string and find all the tags.
@@ -53,5 +53,6 @@ std::vector<sf::Text> ApplyMarkup(std::string& line, std::vector<Tag>& tagStack)
 
 	}
 	
-
+	return {};
 }
+*/

@@ -9,8 +9,11 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
+#include "STB/stb_truetype.h"
 
 #include "TextProcessing.h"
+#include "utility.h"
+
 
 
 static char* s_textBuffer = nullptr;
@@ -332,3 +335,138 @@ int GetBufferStartOfVisibleText( sf::Window* window, sf::Font* font, const int f
 	
 	return index;
 }
+
+
+//font rendering
+
+//stbtt_PackFontRange(stbtt_pack_context *spc, const unsigned char *fontdata, int font_index, float font_size,
+// int first_unicode_char_in_range, int num_chars_in_range, stbtt_packedchar *chardata_for_range);
+
+static unsigned char bitmap[512 * 512];
+static unsigned char fontBuffer[1 << 20];
+static stbtt_packedchar packedChars[26];
+
+
+void AsciiArt(unsigned char* bitmap, int w, int h)
+{
+	for (int j = 0; j < h; ++j) {
+		for (int i = 0; i < w; ++i)
+			putchar(" .:ioVM@"[bitmap[j*w + i] >> 5]);
+		putchar('\n');
+	}
+}
+
+GLuint myVBO = 0;
+GLuint colorVBO = 0;
+GLuint ebo = 0;
+GLuint vao = 0;
+
+GLuint fontTex = 0;
+
+
+
+
+
+void InitFontAtlas(const char* path, sf::RenderWindow* window)
+{
+
+	auto fontFile = fopen(path, "rb");
+	fread(fontBuffer, 1, 1 << 20, fontFile);
+	fclose(fontFile);
+
+	
+
+	stbtt_pack_context spc;
+	stbtt_PackBegin(&spc, bitmap, 512, 512, 0, 1, nullptr);
+	//stbtt_PackSetOversampling(&spc, 2, 2);
+
+	stbtt_PackFontRange(&spc, fontBuffer, 0, -30, 'a', 26, packedChars);
+	stbtt_PackEnd(&spc);
+	
+	window->setActive(true);
+
+
+	glGenTextures(1, &fontTex);
+	glBindTexture(GL_TEXTURE_2D, fontTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512, 512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, bitmap);
+	// can free temp_bitmap at this point
+
+	
+	window->setActive(false);
+}
+
+
+void DrawHelloWorld( sf::RenderWindow* window, GLuint shaderProgram)
+{
+	/*
+	static sf::Clock timer;
+
+	static const char hello[] = "hello world potato";
+	stbtt_aligned_quad quads[ARRAY_COUNT(hello)];
+
+	float startPosX = 500;
+	float startPosY = 200;
+
+	// fill out quads
+	for (int i = 0; i < ARRAY_COUNT(hello); i++)
+	{
+		stbtt_GetPackedQuad(packedChars, 512, 512, hello[i] - 'a', &startPosX, &startPosY, &quads[0], false);
+	}
+
+	glBindBuffer(myVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quads), quads, GL_STATIC_DRAW);
+
+
+	
+	window->setActive(true);
+	
+	glUseProgram(shaderProgram);
+	
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, myVBO);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
+
+	constexpr auto offset = (&quads[0].x1 - &quads[0].x0) *sizeof(float);
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, myVBO);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)offset);
+
+	// go from screen size to -1 1
+
+	GLint loc = glGetUniformLocation(shaderProgram, "toClip");
+	auto windowSize = window->getSize();
+	glUniform2f(loc, windowSize.x, windowSize.y);
+
+
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	/*
+	glEnable(GL_TEXTURE_2D);
+	
+	sf::Shader::bind(both);
+	glBindTexture(GL_TEXTURE_2D, ftex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBegin(GL_QUADS);
+
+
+	for (int i = 0; i < ARRAY_COUNT(hello); i++)
+	{
+		auto& q = quads[i];
+
+		glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0 );
+		glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0 );
+		glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1 );
+		glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1 );
+
+	}
+	glEnd();
+
+
+	window->setActive(false);
+
+	*/
+
+}
+

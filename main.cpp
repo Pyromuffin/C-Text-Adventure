@@ -1,9 +1,6 @@
 #include <cstdio>
 #include <algorithm>
 
-#include <SFML/Window.hpp>
-#include <SFML/Graphics.hpp>
-
 #include "utility.h"
 #include "room.h"
 #include "parse.h"
@@ -13,18 +10,51 @@
 #include "StringHash.h"
 #include "GameState.h"
 #include "TextProcessing.h"
+#include "ShaderCompiler.h"
+
+#include <vulkan/vulkan.h>
+#include "Vulkan.h"
 
 
-static sf::RenderWindow* window; 
+
+
+
+static sf::Window* window; 
 static sf::Font font;
 
 #define RALEWAY_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Raleway\\Raleway-Regular.ttf"
 #define INCONSOLATA_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Inconsolata\\Inconsolata-Regular.ttf"
+#define VERTEX_SHADER_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Shaders\\vertex.glsl"
+#define FRAGMENT_SHADER_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Shaders\\fragment.glsl"
+
+GLuint shaderProgram;
 
 static void InitSFML()
 {
-	window = new sf::RenderWindow(sf::VideoMode(1000, 600), "C-Text-Adventure" ); // window cannot be statically constructed for reasons.
+	
+	//sf::ContextSettings contextSettings{ 24, 8, 0, 4, 6, sf::ContextSettings::Core | sf::ContextSettings::Debug, false };
+	//sf::ContextSettings contextSettings{ 24, 8, 0, 4, 6, sf::ContextSettings::Default | sf::ContextSettings::Debug, false };
+
+	window = new sf::Window(sf::VideoMode(1000, 600), "C-Text-Adventure", sf::Style::Default);
+
+
+	/*
 	font.loadFromFile(INCONSOLATA_PATH);
+	
+	auto vs = CompileShader(VERTEX_SHADER_PATH, GL_VERTEX_SHADER);
+	auto fs = CompileShader(FRAGMENT_SHADER_PATH, GL_FRAGMENT_SHADER);
+
+	shaderProgram = LinkShaders(vs, fs);
+
+
+	glDeleteShader(vs);
+	glDeleteShader(fs);
+	*/
+}
+
+void error_callback(int error, const char* description)
+{
+	printf("Error: %s\n", description);
 }
 
 static void Init()
@@ -36,8 +66,10 @@ static void Init()
     MakeSomeItems();
     MakeDirectionReferents();
 	InitText();
-
+	
 	InitSFML();
+	InitVulkan(window);
+	//InitFontAtlas(RALEWAY_PATH, window);
 }
 
 static void CleanUp()
@@ -112,11 +144,11 @@ static bool HandleEvents(CommandString& commandString)
 			windowScrollOffset += e.mouseWheelScroll.delta;
 		case sf::Event::Resized:
 			sf::FloatRect visibleArea(0, 0, e.size.width, e.size.height);
-			window->setView(sf::View(visibleArea));
+			//window->setView(sf::View(visibleArea));
 			break;
 		}
 	}
-
+	
 	return processCommand;
 }
 
@@ -124,6 +156,7 @@ static bool HandleEvents(CommandString& commandString)
 
 void RenderText(CommandString& commandString)
 {
+	/*
 	static sf::Text cursor{ "|", font };
 
 	static const float padding = 15.0f;
@@ -146,8 +179,16 @@ void RenderText(CommandString& commandString)
 	cursor.setPosition(padding + cursorPos * glyphSpace - halfGlyph, windowSize.y - lineSpace - padding);
 	text.setPosition(padding, windowSize.y - lineSpace - padding);
 	
-	window->clear();
-	window->draw(text);
+	//window->clear();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, window->getSize().x, window->getSize().y);
+
+	//window->pushGLStates();
+	DrawHelloWorld( window, shaderProgram);
+	//window->popGLStates();
+
+
+	//window->draw(text);
 
 	float linePosition = windowSize.y - lineSpace * 2 - padding;
 	int lineCount = 0;
@@ -156,12 +197,14 @@ void RenderText(CommandString& commandString)
 	{
 		auto drawLine = sf::Text{ line, font };
 		drawLine.setPosition(padding, linePosition - lineSpace * lineCount);
-		window->draw(drawLine);
+	//	window->draw(drawLine);
 		lineCount++;
 	}
 
-	if (commandString.blinkTimer.GetBlinkStatus()) window->draw(cursor);
+	//if (commandString.blinkTimer.GetBlinkStatus()) window->draw(cursor);
+
 	window->display();
+	*/
 }
 
 int main(int argc, char *argv[])
@@ -174,7 +217,8 @@ int main(int argc, char *argv[])
     while (GetProgramRunningMode() == kPlaying || GetProgramRunningMode() == kDead)
     {
 		bool processCommand = HandleEvents(commandString);
-	
+
+
 		if (processCommand)
 		{
 			Print("\n%s\n", commandString.GetBuffer());
