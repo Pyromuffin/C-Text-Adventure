@@ -1,7 +1,8 @@
 #pragma once
 
-#include <SFML/OpenGL.hpp>
+#include <vector>
+#include <vulkan/vulkan.h>
 
-GLuint CompileShader(const char* path, GLenum shaderType);
-GLuint LinkShaders(GLuint vs, GLuint fs);
-
+void BeginCompilation();
+void EndCompilation();
+bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spirv);

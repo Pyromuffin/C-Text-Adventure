@@ -1,14 +1,12 @@
-#version 400 core
 
-// float x0,y0,s0,t0; // top-left
-// float x1,y1,s1,t1; // bottom-right
 
-layout(location = 0) in vec4 one;
-layout(location = 1) in vec4 two;
 
-uniform vec2 toClip; // coordinates are sent in screen space.
 
-out vec4 frag_color;
+ // layout (set=M, binding=N) uniform sampler2D variableNameArray[I];
+
+ layout (std140, binding = 0) uniform bufferVals {
+    mat4 mvp;
+} myBufferVals;
 
 vec2 transformToClip( vec2 vert )
 {
