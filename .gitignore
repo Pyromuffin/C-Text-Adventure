@@ -35,3 +35,4 @@ txt
 .idea/
 cmake-build-debug/
 .vs/
+VK/glslang/lib/*.lib
