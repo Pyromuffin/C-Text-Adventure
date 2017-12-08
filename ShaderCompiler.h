@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <vulkan/vulkan.h>
+#include<shaderc\shaderc.hpp>
 
 void BeginCompilation();
 void EndCompilation();
-bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spirv);
+std::vector<uint32_t> CompileShader(const std::string& source, shaderc_shader_kind kind, const char* shaderName);

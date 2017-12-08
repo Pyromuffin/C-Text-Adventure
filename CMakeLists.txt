@@ -18,13 +18,12 @@ include_directories("VK/Include/")
 include_directories("glm/include/")
 
 set(VULKAN_LIB_DIR "${CMAKE_SOURCE_DIR}/VK/Lib/")
-set(VULKAN_LIBS "${VULKAN_LIB_DIR}vulkan-1.lib" "${VULKAN_LIB_DIR}VKstatic.1.lib")
-set(GLSLANG_LIB_DIR "${CMAKE_SOURCE_DIR}/VK/glslang/lib/")
+if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+set(VULKAN_LIBS "${VULKAN_LIB_DIR}vulkan-1.lib" "${VULKAN_LIB_DIR}VKstatic.1.lib" "${VULKAN_LIB_DIR}Debug/shaderc_combined.lib")
+else()
+set(VULKAN_LIBS "${VULKAN_LIB_DIR}vulkan-1.lib" "${VULKAN_LIB_DIR}VKstatic.1.lib" "${VULKAN_LIB_DIR}shaderc_combined.lib")
+endif()
 
-#figure out how to get this to not use the debug libs sometimes.
-file(GLOB GLSLANG_LIBS
-   "${GLSLANG_LIB_DIR}*d.lib"
-)
 
 set(SOURCE_FILES
         main.cpp
@@ -37,4 +36,4 @@ set(SOURCE_FILES
 
 
 add_executable(C_Text_Adventure ${SOURCE_FILES})
-target_link_libraries(C_Text_Adventure ${SFML_LIBRARIES} ${SFML_DEPENDENCIES} ${VULKAN_LIBS} ${GLSLANG_LIBS})
+target_link_libraries(C_Text_Adventure ${SFML_LIBRARIES} ${SFML_DEPENDENCIES} ${VULKAN_LIBS})
