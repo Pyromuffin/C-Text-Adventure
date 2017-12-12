@@ -1386,7 +1386,7 @@ void RenderFrame(sf::Window* window)
 }
 
 
-GpuBuffer CreateBuffer(VulkanData& data, VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlagBits memoryProperties)
+GpuBuffer CreateBuffer(VulkanData& data, VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryProperties)
 {
 	GpuBuffer buffer;
 
@@ -1419,8 +1419,7 @@ void UploadTexture(unsigned char* texture, int x, int y)
 	VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
 	bool needStaging = ((formatProps.linearTilingFeatures & features) != features) ? true : false;
 
-
-	auto stagingBuffer = CreateBuffer(data, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	auto stagingBuffer = CreateBuffer(data, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 	void* cpuMemory;
 	vkMapMemory(data.device, stagingBuffer.memory, 0, stagingBuffer.memorySize, 0, &cpuMemory);
