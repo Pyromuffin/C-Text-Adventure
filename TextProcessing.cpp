@@ -342,7 +342,10 @@ int GetBufferStartOfVisibleText( sf::Window* window, sf::Font* font, const int f
 //stbtt_PackFontRange(stbtt_pack_context *spc, const unsigned char *fontdata, int font_index, float font_size,
 // int first_unicode_char_in_range, int num_chars_in_range, stbtt_packedchar *chardata_for_range);
 
-static unsigned char bitmap[512 * 512];
+static const int bitmapX = 512;
+static const int bitmapY = 512;
+
+static unsigned char bitmap[bitmapX * bitmapY];
 static unsigned char fontBuffer[1 << 20];
 static stbtt_packedchar packedChars[26];
 
@@ -356,25 +359,20 @@ void AsciiArt(unsigned char* bitmap, int w, int h)
 	}
 }
 
-GLuint myVBO = 0;
-GLuint colorVBO = 0;
-GLuint ebo = 0;
-GLuint vao = 0;
-
-GLuint fontTex = 0;
 
 
 
 
-
-void InitFontAtlas(const char* path, sf::RenderWindow* window)
+std::tuple<unsigned char*, int, int> GetBitmap()
 {
+	return std::make_tuple(bitmap, bitmapX, bitmapY);
+}
 
+void InitFontAtlas(const char* path)
+{
 	auto fontFile = fopen(path, "rb");
 	fread(fontBuffer, 1, 1 << 20, fontFile);
 	fclose(fontFile);
-
-	
 
 	stbtt_pack_context spc;
 	stbtt_PackBegin(&spc, bitmap, 512, 512, 0, 1, nullptr);
@@ -382,21 +380,10 @@ void InitFontAtlas(const char* path, sf::RenderWindow* window)
 
 	stbtt_PackFontRange(&spc, fontBuffer, 0, -30, 'a', 26, packedChars);
 	stbtt_PackEnd(&spc);
-	
-	window->setActive(true);
-
-
-	glGenTextures(1, &fontTex);
-	glBindTexture(GL_TEXTURE_2D, fontTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512, 512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, bitmap);
-	// can free temp_bitmap at this point
-
-	
-	window->setActive(false);
 }
 
 
-void DrawHelloWorld( sf::RenderWindow* window, GLuint shaderProgram)
+void DrawHelloWorld( sf::RenderWindow* window)
 {
 	/*
 	static sf::Clock timer;

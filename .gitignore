@@ -18,7 +18,7 @@
 *.so
 *.so.*
 *.dylib
-*.lib
+#*.lib
 
 # Executables
 *.exe
@@ -36,5 +36,3 @@ txt
 .idea/
 cmake-build-debug/
 .vs/
-*.lib
-VK/Lib/shaderc_combined.lib

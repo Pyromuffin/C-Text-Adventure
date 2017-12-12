@@ -27,8 +27,6 @@ static sf::Font font;
 #define VERTEX_SHADER_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Shaders\\vertex.glsl"
 #define FRAGMENT_SHADER_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Shaders\\fragment.glsl"
 
-GLuint shaderProgram;
-
 static void InitSFML()
 {
 	
@@ -68,8 +66,11 @@ static void Init()
 	InitText();
 	
 	InitSFML();
-	InitVulkan(window);
-	//InitFontAtlas(RALEWAY_PATH, window);
+
+	auto[bitmap, x, y] = GetBitmap();
+
+	InitVulkan(window, bitmap, x, y);
+	InitFontAtlas(RALEWAY_PATH);
 }
 
 static void CleanUp()
@@ -245,6 +246,7 @@ int main(int argc, char *argv[])
 			commandString.Reset();
 		}
 
+		RenderFrame(window);
 		RenderText(commandString);
     }
 

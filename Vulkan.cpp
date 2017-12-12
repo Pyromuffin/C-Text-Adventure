@@ -9,6 +9,7 @@
 #endif
 
 #include <SFML/Window.hpp>
+#include <SFML\Graphics.hpp>
 #include <vulkan/vulkan.hpp>
 #include <vulkan\vk_layer.h>
 
@@ -44,14 +45,16 @@ struct GpuImage
 {
 	VkImage image;
 	VkImageView view;
-	VkDeviceMemory mem;
+	VkDeviceMemory memory;
+	VkDeviceSize memorySize;
 };
 
 struct GpuBuffer
 {
 	VkBuffer buffer;
-	VkDeviceMemory mem;
 	VkDescriptorBufferInfo descriptorInfo;
+	VkDeviceMemory memory;
+	VkDeviceSize memorySize;
 };
 
 struct VulkanData
@@ -76,6 +79,8 @@ struct VulkanData
 	std::vector<VkImage> swapchainImages;
 	std::vector<VkImageView> swapchainImageViews;
 	uint32_t currentSwapchainIndex;
+	VkSemaphore imageAcquireSemaphore;
+	VkFence frameFence;
 
 	GpuImage depthBuffer;
 	GpuBuffer uniformBuffer;
@@ -311,7 +316,7 @@ void CreateVulkanCmdBuffer(VulkanData& data)
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cmdPoolInfo.pNext = NULL;
 	cmdPoolInfo.queueFamilyIndex = data.queueFamilyIndex;
-	cmdPoolInfo.flags = 0;
+	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 
 	VkCommandPool cmdPool;
@@ -560,8 +565,8 @@ void CreateDepthBuffer(VulkanData& data)
 	mem_alloc.memoryTypeIndex = typeIndex;
 
 	
-	VK_CHECK( vkAllocateMemory(data.device, &mem_alloc, nullptr, &data.depthBuffer.mem) );
-	VK_CHECK( vkBindImageMemory(data.device, data.depthBuffer.image, data.depthBuffer.mem, 0) );
+	VK_CHECK( vkAllocateMemory(data.device, &mem_alloc, nullptr, &data.depthBuffer.memory) );
+	VK_CHECK( vkBindImageMemory(data.device, data.depthBuffer.image, data.depthBuffer.memory, 0) );
 	VK_CHECK( vkCreateImageView(data.device, &view_info, nullptr, &data.depthBuffer.view) );
 	
 
@@ -608,22 +613,22 @@ void CreateUniformBuffer(VulkanData& data)
 	alloc_info.pNext = NULL;
 	alloc_info.memoryTypeIndex = 0;
 	alloc_info.allocationSize = mem_reqs.size;
-
+	data.uniformBuffer.memorySize = mem_reqs.size;
 
 	auto pass = GetMemoryTypeIndexFromProps(data.memoryProps, mem_reqs.memoryTypeBits,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		&alloc_info.memoryTypeIndex);
 	assert(pass && "No mappable, coherent memory");
 
-	VK_CHECK( vkAllocateMemory(data.device, &alloc_info, NULL, &data.uniformBuffer.mem) );
+	VK_CHECK( vkAllocateMemory(data.device, &alloc_info, NULL, &data.uniformBuffer.memory) );
 
 	void* cpuMem = nullptr;
-	VK_CHECK( vkMapMemory(data.device, data.uniformBuffer.mem, 0, mem_reqs.size, 0, &cpuMem) );
+	VK_CHECK( vkMapMemory(data.device, data.uniformBuffer.memory, 0, mem_reqs.size, 0, &cpuMem) );
 	memcpy(cpuMem, &MVP, sizeof(MVP));
 
-	vkUnmapMemory(data.device, data.uniformBuffer.mem);
+	vkUnmapMemory(data.device, data.uniformBuffer.memory);
 
-	VK_CHECK( vkBindBufferMemory(data.device, data.uniformBuffer.buffer, data.uniformBuffer.mem, 0) );
+	VK_CHECK( vkBindBufferMemory(data.device, data.uniformBuffer.buffer, data.uniformBuffer.memory, 0) );
 }
 
 void CreateDescriptors(VulkanData& data)
@@ -759,27 +764,28 @@ void CreateShaders(VulkanData& data)
 		"#version 400\n"
 		"#extension GL_ARB_separate_shader_objects : enable\n"
 		"#extension GL_ARB_shading_language_420pack : enable\n"
-		"layout (std140, binding = 0) uniform bufferVals {\n"
-		"    mat4 mvp;\n"
-		"} myBufferVals;\n"
+		"layout (std140, binding = 0) uniform buf {\n"
+		"        mat4 mvp;\n"
+		"} ubuf;\n"
 		"layout (location = 0) in vec4 pos;\n"
-		"layout (location = 1) in vec4 inColor;\n"
-		"layout (location = 0) out vec4 outColor;\n"
+		"layout (location = 1) in vec2 inTexCoords;\n"
+		"layout (location = 0) out vec2 texcoord;\n"
 		"void main() {\n"
-		"   outColor = inColor;\n"
-		"   gl_Position = myBufferVals.mvp * pos;\n"
+		"   texcoord = inTexCoords;\n"
+		"   gl_Position = ubuf.mvp * pos;\n"
 		"}\n";
+
 
 	static const char *fragShaderText =
 		"#version 400\n"
 		"#extension GL_ARB_separate_shader_objects : enable\n"
 		"#extension GL_ARB_shading_language_420pack : enable\n"
-		"layout (location = 0) in vec4 color;\n"
+		"layout (binding = 1) uniform sampler2D tex;\n"
+		"layout (location = 0) in vec2 texcoord;\n"
 		"layout (location = 0) out vec4 outColor;\n"
 		"void main() {\n"
-		"   outColor = color;\n"
+		"   outColor = textureLod(tex, texcoord, 0.0);\n"
 		"}\n";
-
 	
 
 	VkPipelineShaderStageCreateInfo vertexStage;
@@ -858,12 +864,21 @@ VkMemoryRequirements GetMemoryRequirements(VkDevice device, T obj)
 
 		return mem_reqs;
 	}
+	else if constexpr(std::is_same<T, GpuImage>().value)
+	{
+		VkMemoryRequirements mem_reqs;
+		vkGetImageMemoryRequirements(device, obj.image, &mem_reqs);
+	}
+	else constexpr
+	{
+		assert(false);
+	}
 }
 
 static VkPhysicalDeviceMemoryProperties s_memoryProps;
 
 template<typename T>
-auto AllocateGpuMemory(VkDevice device, T& obj, VkMemoryPropertyFlags memoryFlags, VkPhysicalDeviceMemoryProperties memoryProps = s_memoryProps)
+void AllocateGpuMemory(VkDevice device, T& obj, VkMemoryPropertyFlags memoryFlags, VkPhysicalDeviceMemoryProperties memoryProps = s_memoryProps)
 {
 	VkMemoryRequirements reqs = GetMemoryRequirements(device, obj);
 
@@ -876,9 +891,9 @@ auto AllocateGpuMemory(VkDevice device, T& obj, VkMemoryPropertyFlags memoryFlag
 	auto pass = GetMemoryTypeIndexFromProps(memoryProps, reqs.memoryTypeBits, memoryFlags, &alloc_info.memoryTypeIndex);
 	assert(pass && "No mappable, coherent memory");
 
-	VK_CHECK( vkAllocateMemory(device, &alloc_info, NULL, &obj.mem) );
+	VK_CHECK( vkAllocateMemory(device, &alloc_info, NULL, &obj.memory) );
 	
-	return reqs.size;
+	obj.memorySize = reqs.size;
 }
 
 void CreateVertexBuffer(VulkanData& data)
@@ -896,16 +911,16 @@ void CreateVertexBuffer(VulkanData& data)
 	VK_CHECK( vkCreateBuffer(data.device, &buf_info, NULL, &data.vertexBuffer.buffer) );
 
 	
-	auto size = AllocateGpuMemory(data.device, data.vertexBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	AllocateGpuMemory(data.device, data.vertexBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 	uint8_t *pData;
-	vkMapMemory(data.device, data.vertexBuffer.mem, 0, size, 0, (void **)&pData);
+	vkMapMemory(data.device, data.vertexBuffer.memory, 0, data.vertexBuffer.memorySize, 0, (void **)&pData);
 
 	memcpy(pData, g_vb_solid_face_colors_Data, sizeof(g_vb_solid_face_colors_Data));
 
-	vkUnmapMemory(data.device, data.vertexBuffer.mem);
+	vkUnmapMemory(data.device, data.vertexBuffer.memory);
 
-	vkBindBufferMemory(data.device, data.vertexBuffer.buffer, data.vertexBuffer.mem, 0);
+	vkBindBufferMemory(data.device, data.vertexBuffer.buffer, data.vertexBuffer.memory, 0);
 
 	data.vertexBinding.binding = 0;
 	data.vertexBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -1052,19 +1067,118 @@ void CreatePipeline(VulkanData& data)
 	VK_CHECK( vkCreateGraphicsPipelines(data.device, NULL, 1, &pipeline, NULL, &data.pipeline) );
 }
 
+VkCommandBuffer BeginRenderPass(VulkanData& data)
+{
+	// Get the index of the next available swapchain image:
+	VK_CHECK(vkAcquireNextImageKHR(data.device, data.swapchain, UINT64_MAX, data.imageAcquireSemaphore, VK_NULL_HANDLE, &data.currentSwapchainIndex));
+
+	VkCommandBufferBeginInfo cmd_buf_info = {};
+	cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	cmd_buf_info.pNext = NULL;
+	cmd_buf_info.flags = 0;
+	cmd_buf_info.pInheritanceInfo = NULL;
+
+	VkClearValue clear_values[2];
+	clear_values[0].color.float32[0] = 0.2f;
+	clear_values[0].color.float32[1] = 0.2f;
+	clear_values[0].color.float32[2] = 0.2f;
+	clear_values[0].color.float32[3] = 0.2f;
+	clear_values[1].depthStencil.depth = 1.0f;
+	clear_values[1].depthStencil.stencil = 0;
+
+	VkRenderPassBeginInfo rp_begin;
+	rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	rp_begin.pNext = NULL;
+	rp_begin.renderPass = data.renderPass;
+	rp_begin.framebuffer = data.framebuffers[data.currentSwapchainIndex];
+	rp_begin.renderArea.offset.x = 0;
+	rp_begin.renderArea.offset.y = 0;
+	rp_begin.renderArea.extent.width = data.framebufferWidth;
+	rp_begin.renderArea.extent.height = data.framebufferHeight;
+	rp_begin.clearValueCount = 2;
+	rp_begin.pClearValues = clear_values;
+
+	VK_CHECK(vkBeginCommandBuffer(data.cmdBuffer, &cmd_buf_info));
+	vkCmdBeginRenderPass(data.cmdBuffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkResetFences(data.device, 1, &data.frameFence);
+
+	return data.cmdBuffer;
+}
+
+
+void EndRenderPass(VkCommandBuffer cmdBuffer)
+{
+	vkCmdEndRenderPass(cmdBuffer);
+	VK_CHECK(vkEndCommandBuffer(cmdBuffer));
+}
+
+void SubmitCommandBuffers(VulkanData& data, VkCommandBuffer* cmdBuffers, uint32_t commandBufferCount, VkFence fence)
+{
+	VkPipelineStageFlags pipe_stage_flags =
+		VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	VkSubmitInfo submit_info[1] = {};
+	submit_info[0].pNext = NULL;
+	submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submit_info[0].waitSemaphoreCount = 1;
+	submit_info[0].pWaitSemaphores = &data.imageAcquireSemaphore;
+	submit_info[0].pWaitDstStageMask = &pipe_stage_flags;
+	submit_info[0].commandBufferCount = commandBufferCount;
+	submit_info[0].pCommandBuffers = cmdBuffers;
+	submit_info[0].signalSemaphoreCount = 0;
+	submit_info[0].pSignalSemaphores = NULL;
+	VK_CHECK(vkQueueSubmit(data.queue, 1, submit_info, fence));
+}
+
+bool WaitForFence(VulkanData& data, VkFence fence, uint64_t timeoutNanos)
+{
+	auto res = vkWaitForFences(data.device, 1, &fence, VK_TRUE, timeoutNanos);
+	return res == VK_TIMEOUT;
+}
+
+void SetViewportAndScissor(VulkanData& data, VkCommandBuffer cmdBuffer, sf::Vector2u size, sf::Vector2u offset)
+{
+	data.viewport.width = static_cast<float>(size.x);
+	data.viewport.height = static_cast<float>(size.y);
+	data.viewport.minDepth = 0.0f;
+	data.viewport.maxDepth = 1.0f;
+	data.viewport.x = static_cast<float>(offset.x);
+	data.viewport.y = static_cast<float>(offset.y);
+	vkCmdSetViewport(cmdBuffer, 0, 1, &data.viewport);
+
+	data.scissor.extent.width = size.x;
+	data.scissor.extent.height = size.y;
+	data.scissor.offset.x = offset.x;
+	data.scissor.offset.y = offset.y;
+	vkCmdSetScissor(cmdBuffer, 0, 1, &data.scissor);
+}
+
+void Present(VulkanData& data)
+{
+	VkPresentInfoKHR present;
+	present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	present.pNext = NULL;
+	present.swapchainCount = 1;
+	present.pSwapchains = &data.swapchain;
+	present.pImageIndices = &data.currentSwapchainIndex;
+	present.pWaitSemaphores = NULL;
+	present.waitSemaphoreCount = 0;
+	present.pResults = NULL;
+	VK_CHECK(vkQueuePresentKHR(data.queue, &present));
+}
+
 
 void Cube(VulkanData& data)
 {
-	VkSemaphore imageAcquiredSemaphore;
 	VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
 	imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 	imageAcquiredSemaphoreCreateInfo.pNext = NULL;
 	imageAcquiredSemaphoreCreateInfo.flags = 0;
 
-	VK_CHECK( vkCreateSemaphore(data.device, &imageAcquiredSemaphoreCreateInfo, NULL, &imageAcquiredSemaphore) );
+	VK_CHECK( vkCreateSemaphore(data.device, &imageAcquiredSemaphoreCreateInfo, NULL, &data.imageAcquireSemaphore) );
 
 	// Get the index of the next available swapchain image:
-	VK_CHECK( vkAcquireNextImageKHR(data.device, data.swapchain, UINT64_MAX, imageAcquiredSemaphore, VK_NULL_HANDLE, &data.currentSwapchainIndex) );
+	VK_CHECK( vkAcquireNextImageKHR(data.device, data.swapchain, UINT64_MAX, data.imageAcquireSemaphore, VK_NULL_HANDLE, &data.currentSwapchainIndex) );
 
 	VkCommandBufferBeginInfo cmd_buf_info = {};
 	cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1094,9 +1208,6 @@ void Cube(VulkanData& data)
 	
 	VK_CHECK(vkBeginCommandBuffer(data.cmdBuffer, &cmd_buf_info));
 
-
-
-
 	vkCmdBeginRenderPass(data.cmdBuffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdBindPipeline(data.cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, data.pipeline);
 	vkCmdBindDescriptorSets(data.cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, data.pipelineLayout, 0, 1, data.descriptorSets.data(), 0, NULL);
@@ -1104,8 +1215,8 @@ void Cube(VulkanData& data)
 	const VkDeviceSize offsets[1] = { 0 };
 	vkCmdBindVertexBuffers(data.cmdBuffer, 0, 1, &data.vertexBuffer.buffer, offsets);
 
-	data.viewport.height = (float)data.framebufferWidth;
-	data.viewport.width = (float)data.framebufferHeight;
+	data.viewport.width = (float)data.framebufferWidth;
+	data.viewport.height = (float)data.framebufferHeight;
 	data.viewport.minDepth = (float)0.0f;
 	data.viewport.maxDepth = (float)1.0f;
 	data.viewport.x = 0;
@@ -1124,11 +1235,10 @@ void Cube(VulkanData& data)
 	VK_CHECK( vkEndCommandBuffer(data.cmdBuffer) );
 
 	VkFenceCreateInfo fenceInfo;
-	VkFence drawFence;
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.pNext = NULL;
 	fenceInfo.flags = 0;
-	vkCreateFence(data.device, &fenceInfo, NULL, &drawFence);
+	vkCreateFence(data.device, &fenceInfo, NULL, &data.frameFence);
 
 	const VkCommandBuffer cmd_bufs[] = { data.cmdBuffer };
 	VkPipelineStageFlags pipe_stage_flags =
@@ -1137,17 +1247,17 @@ void Cube(VulkanData& data)
 	submit_info[0].pNext = NULL;
 	submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submit_info[0].waitSemaphoreCount = 1;
-	submit_info[0].pWaitSemaphores = &imageAcquiredSemaphore;
+	submit_info[0].pWaitSemaphores = &data.imageAcquireSemaphore;
 	submit_info[0].pWaitDstStageMask = &pipe_stage_flags;
 	submit_info[0].commandBufferCount = 1;
 	submit_info[0].pCommandBuffers = cmd_bufs;
 	submit_info[0].signalSemaphoreCount = 0;
 	submit_info[0].pSignalSemaphores = NULL;
-	VK_CHECK( vkQueueSubmit(data.queue, 1, submit_info, drawFence) );
+	VK_CHECK( vkQueueSubmit(data.queue, 1, submit_info, data.frameFence) );
 
 	VkResult res;
 	do {
-		 res = vkWaitForFences(data.device, 1, &drawFence, VK_TRUE, 100000000);
+		 res = vkWaitForFences(data.device, 1, &data.frameFence, VK_TRUE, 100000000);
 	} while (res == VK_TIMEOUT);
 
 	VK_CHECK(res);
@@ -1165,9 +1275,11 @@ void Cube(VulkanData& data)
 
 }
 
+void UploadTexture(unsigned char* texture, int x, int y);
+
 static VulkanData s_vulkanData;
 
-void InitVulkan(sf::Window* window)
+void InitVulkan(sf::Window* window, unsigned char* texture, int x, int y)
 {
 	s_vulkanData.framebufferWidth = window->getSize().x;
 	s_vulkanData.framebufferHeight = window->getSize().y;
@@ -1201,9 +1313,117 @@ void InitVulkan(sf::Window* window)
 
 	CreateVertexBuffer(s_vulkanData);
 
+	UploadTexture(texture, x, y);
+
 	CreatePipeline(s_vulkanData);
 
 
 	Cube(s_vulkanData);
+
 }
 
+
+glm::mat4x4 GetMVP()
+{
+	static sf::Clock rotator;
+	static float speed = 1.0f;
+
+	auto Projection = glm::perspective(glm::radians(45.0f), 1000.0f/600.0f, 0.1f, 100.0f);
+	auto View = glm::lookAt(
+		glm::vec3(0, 0, -10), // Camera is at (-5,3,-10), in World Space
+		glm::vec3(0, 0, 0),    // and looks at the origin
+		glm::vec3(0, 1, 0)    // Head is up (set to 0,-1,0 to look upside-down)
+	);
+	auto model = glm::mat4(1.0f);
+	auto axis = glm::vec3(1.0f, 1.0f, 1.0f);
+	float angle = speed * rotator.getElapsedTime().asSeconds();
+	model = glm::rotate(model, angle , axis);
+	// Vulkan clip space has inverted Y and half Z.
+	auto Clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.0f, 0.0f, 0.5f, 1.0f);
+
+	auto MVP = Clip * Projection * View * model;
+	return MVP;
+}
+
+void PerFrame(VulkanData& data, sf::Window* window)
+{
+	auto cmdBuffer = BeginRenderPass(data);
+	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, data.pipeline);
+	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, data.pipelineLayout, 0, 1, data.descriptorSets.data(), 0, NULL);
+	SetViewportAndScissor(data, cmdBuffer, window->getSize(), { 0,0 });
+
+	auto mvp = GetMVP();
+
+	void* cpuMem;
+	vkMapMemory(data.device, data.uniformBuffer.memory, 0, data.uniformBuffer.memorySize, 0, &cpuMem);
+	memcpy(cpuMem, &mvp, sizeof(mvp));
+	vkUnmapMemory(data.device, data.uniformBuffer.memory);
+
+	const VkDeviceSize offsets[1] = { 0 };
+	vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &data.vertexBuffer.buffer, offsets);
+	vkCmdDraw(data.cmdBuffer, 12 * 3, 1, 0, 0);
+
+	EndRenderPass(cmdBuffer);
+
+	SubmitCommandBuffers(data, &cmdBuffer, 1, data.frameFence);
+
+	auto nanos = sf::seconds(1.0f).asNanoseconds();
+
+	if (WaitForFence(data, data.frameFence, nanos))
+	{
+		printf("Timed out waiting for render.\n");
+	}
+
+	Present(data);
+}
+
+void RenderFrame(sf::Window* window)
+{
+	PerFrame(s_vulkanData, window);
+}
+
+
+GpuBuffer CreateBuffer(VulkanData& data, VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlagBits memoryProperties)
+{
+	GpuBuffer buffer;
+
+	VkBufferCreateInfo buf_info = {};
+	buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buf_info.pNext = NULL;
+	buf_info.usage = usageFlags;
+	buf_info.size = size;
+	buf_info.queueFamilyIndexCount = 0;
+	buf_info.pQueueFamilyIndices = NULL;
+	buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	buf_info.flags = 0;
+	VK_CHECK( vkCreateBuffer(data.device, &buf_info, NULL, &buffer.buffer) );
+
+	AllocateGpuMemory(data.device, buffer, memoryProperties);
+
+	return buffer;
+}
+
+void UploadTexture(unsigned char* texture, int x, int y)
+{
+	// implicit usage of data for now
+	auto& data = s_vulkanData;
+
+	size_t imageSize = x * y * sizeof(char);
+
+	VkFormatProperties formatProps;
+	vkGetPhysicalDeviceFormatProperties(data.gpu, VK_FORMAT_R8_UNORM, &formatProps);
+
+	VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+	bool needStaging = ((formatProps.linearTilingFeatures & features) != features) ? true : false;
+
+
+	auto stagingBuffer = CreateBuffer(data, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+	void* cpuMemory;
+	vkMapMemory(data.device, stagingBuffer.memory, 0, stagingBuffer.memorySize, 0, &cpuMemory);
+	memcpy(cpuMemory, texture, imageSize);
+	vkUnmapMemory(data.device, stagingBuffer.memory);
+}

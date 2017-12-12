@@ -2,7 +2,6 @@
 
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
-#include <SFML/OpenGL.hpp>
 
 class CursorBlinkTimer
 {
@@ -57,13 +56,13 @@ public:
 
 
 void InitText();
-void InitFontAtlas(const char* path, sf::RenderWindow* window);
+void InitFontAtlas(const char* path);
 void Print(const char* formatString, ...);
 char* GetTextBuffer();
+
+std::tuple<unsigned char*, int, int> GetBitmap();
 
 bool HandleKeyDown(const sf::Event& e, CommandString& commandString);
 
 int GetBufferStartOfVisibleText(sf::Window* window, sf::Font* font, int fontSize, int windowScrollOffset);
 std::vector<std::string> DoWordWrappingOnBlockOfText(sf::Window* window, sf::Font* font, const int fontSize, char *text, float padding);
-
-void DrawHelloWorld( sf::RenderWindow* window, GLuint program);
