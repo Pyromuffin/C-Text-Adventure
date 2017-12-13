@@ -67,10 +67,11 @@ static void Init()
 	
 	InitSFML();
 
+	InitFontAtlas(RALEWAY_PATH);
+
 	auto[bitmap, x, y] = GetBitmap();
 
 	InitVulkan(window, bitmap, x, y);
-	InitFontAtlas(RALEWAY_PATH);
 }
 
 static void CleanUp()

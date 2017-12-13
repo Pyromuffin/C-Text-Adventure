@@ -45,6 +45,8 @@ struct GpuImage
 {
 	VkImage image;
 	VkImageView view;
+	VkDescriptorImageInfo descriptorInfo;
+
 	VkDeviceMemory memory;
 	VkDeviceSize memorySize;
 };
@@ -89,6 +91,7 @@ struct VulkanData
 	std::vector<VkDescriptorSet> descriptorSets;
 	VkPipelineLayout pipelineLayout;
 	VkDescriptorPool descriptorPool;
+	VkSampler linearClampSampler;
 
 	VkRenderPass renderPass;
 
@@ -633,19 +636,49 @@ void CreateUniformBuffer(VulkanData& data)
 
 void CreateDescriptors(VulkanData& data)
 {
-	VkDescriptorSetLayoutBinding layout_binding = {};
-	layout_binding.binding = 0;
-	layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	layout_binding.descriptorCount = 1;
-	layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	layout_binding.pImmutableSamplers = NULL;
+	VkDescriptorSetLayoutBinding vertex_binding = {};
+	vertex_binding.binding = 0;
+	vertex_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	vertex_binding.descriptorCount = 1;
+	vertex_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	vertex_binding.pImmutableSamplers = NULL;
+
+	VkSamplerCreateInfo samplerInfo = {};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	samplerInfo.anisotropyEnable = VK_TRUE;
+	samplerInfo.maxAnisotropy = 16;
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = 0.0f;
+	vkCreateSampler(data.device, &samplerInfo, nullptr, &data.linearClampSampler);
+
+
+	VkDescriptorSetLayoutBinding fragment_binding = {};
+	fragment_binding.binding = 1;
+	fragment_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	fragment_binding.descriptorCount = 1;
+	fragment_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragment_binding.pImmutableSamplers = nullptr;
 
 #define NUM_DESCRIPTOR_SETS 1
+
+	VkDescriptorSetLayoutBinding bindings[] = { vertex_binding, fragment_binding };
+
 	VkDescriptorSetLayoutCreateInfo descriptor_layout = {};
 	descriptor_layout.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	descriptor_layout.pNext = NULL;
-	descriptor_layout.bindingCount = 1;
-	descriptor_layout.pBindings = &layout_binding;
+	descriptor_layout.bindingCount = 2;
+	descriptor_layout.pBindings = bindings;
 	data.descriptorLayouts.resize(NUM_DESCRIPTOR_SETS);
 	VK_CHECK( vkCreateDescriptorSetLayout(data.device, &descriptor_layout, NULL, data.descriptorLayouts.data()) );
 
@@ -659,16 +692,18 @@ void CreateDescriptors(VulkanData& data)
 
 	VK_CHECK( vkCreatePipelineLayout(data.device, &pPipelineLayoutCreateInfo, NULL, &data.pipelineLayout) );
 
-	VkDescriptorPoolSize type_count[1];
-	type_count[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	type_count[0].descriptorCount = 1;
+	VkDescriptorPoolSize poolSizes[2];
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[0].descriptorCount = 1;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[1].descriptorCount = 1;
 
 	VkDescriptorPoolCreateInfo descriptor_pool = {};
 	descriptor_pool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	descriptor_pool.pNext = NULL;
 	descriptor_pool.maxSets = 1;
-	descriptor_pool.poolSizeCount = 1;
-	descriptor_pool.pPoolSizes = type_count;
+	descriptor_pool.poolSizeCount = 2;
+	descriptor_pool.pPoolSizes = poolSizes;
 
 	VK_CHECK( vkCreateDescriptorPool(data.device, &descriptor_pool, NULL, &data.descriptorPool) );
 
@@ -682,7 +717,7 @@ void CreateDescriptors(VulkanData& data)
 	VK_CHECK( vkAllocateDescriptorSets(data.device, alloc_info, data.descriptorSets.data()) );
 
 
-	VkWriteDescriptorSet writes[1];
+	VkWriteDescriptorSet writes[2];
 	writes[0] = {};
 	writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writes[0].pNext = NULL;
@@ -693,7 +728,23 @@ void CreateDescriptors(VulkanData& data)
 	writes[0].dstArrayElement = 0;
 	writes[0].dstBinding = 0;
 
-	vkUpdateDescriptorSets(data.device, 1, writes, 0, NULL);
+
+	VkDescriptorImageInfo descriptorImageInfo;
+	descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	descriptorImageInfo.imageView = VK_NULL_HANDLE;
+	descriptorImageInfo.sampler = VK_NULL_HANDLE;
+
+	writes[1] = {};
+	writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writes[1].pNext = NULL;
+	writes[1].dstSet = data.descriptorSets[0];
+	writes[1].descriptorCount = 1;
+	writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writes[1].pImageInfo = nullptr;// &descriptorImageInfo;
+	writes[1].dstArrayElement = 0;
+	writes[1].dstBinding = 1;
+
+	// vkUpdateDescriptorSets(data.device, 2, writes, 0, NULL);
 
 }
 
@@ -857,21 +908,21 @@ void CreateFrameBuffer(VulkanData& data)
 template<typename T>
 VkMemoryRequirements GetMemoryRequirements(VkDevice device, T obj)
 {
+	VkMemoryRequirements mem_reqs;
+
 	if constexpr(std::is_same<T, GpuBuffer>().value)
 	{
-		VkMemoryRequirements mem_reqs;
 		vkGetBufferMemoryRequirements(device, obj.buffer, &mem_reqs);
-
 		return mem_reqs;
 	}
 	else if constexpr(std::is_same<T, GpuImage>().value)
 	{
-		VkMemoryRequirements mem_reqs;
 		vkGetImageMemoryRequirements(device, obj.image, &mem_reqs);
+		return mem_reqs;
 	}
 	else constexpr
 	{
-		assert(false);
+		assert(false && "Invalid GPU allocation type" );
 	}
 }
 
@@ -902,7 +953,7 @@ void CreateVertexBuffer(VulkanData& data)
 	buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	buf_info.pNext = NULL;
 	buf_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	buf_info.size = sizeof(g_vb_solid_face_colors_Data);
+	buf_info.size = sizeof(g_vb_texture_Data);
 	buf_info.queueFamilyIndexCount = 0;
 	buf_info.pQueueFamilyIndices = NULL;
 	buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -916,7 +967,7 @@ void CreateVertexBuffer(VulkanData& data)
 	uint8_t *pData;
 	vkMapMemory(data.device, data.vertexBuffer.memory, 0, data.vertexBuffer.memorySize, 0, (void **)&pData);
 
-	memcpy(pData, g_vb_solid_face_colors_Data, sizeof(g_vb_solid_face_colors_Data));
+	memcpy(pData, g_vb_texture_Data, sizeof(g_vb_texture_Data));
 
 	vkUnmapMemory(data.device, data.vertexBuffer.memory);
 
@@ -924,15 +975,16 @@ void CreateVertexBuffer(VulkanData& data)
 
 	data.vertexBinding.binding = 0;
 	data.vertexBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-	data.vertexBinding.stride = sizeof(g_vb_solid_face_colors_Data[0]);
+	data.vertexBinding.stride = sizeof(g_vb_texture_Data[0]);
 
 	data.vertexAttributes[0].binding = 0;
 	data.vertexAttributes[0].location = 0;
 	data.vertexAttributes[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 	data.vertexAttributes[0].offset = 0;
+
 	data.vertexAttributes[1].binding = 0;
 	data.vertexAttributes[1].location = 1;
-	data.vertexAttributes[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	data.vertexAttributes[1].format = VK_FORMAT_R32G32_SFLOAT;
 	data.vertexAttributes[1].offset = 16;
 }
 
@@ -1313,13 +1365,11 @@ void InitVulkan(sf::Window* window, unsigned char* texture, int x, int y)
 
 	CreateVertexBuffer(s_vulkanData);
 
-	UploadTexture(texture, x, y);
-
 	CreatePipeline(s_vulkanData);
 
+	UploadTexture(texture, x, y);
 
 	Cube(s_vulkanData);
-
 }
 
 
@@ -1403,21 +1453,163 @@ GpuBuffer CreateBuffer(VulkanData& data, VkDeviceSize size, VkBufferUsageFlags u
 
 	AllocateGpuMemory(data.device, buffer, memoryProperties);
 
+	VK_CHECK(vkBindBufferMemory(data.device, buffer.buffer, buffer.memory, 0));
+
 	return buffer;
 }
+
+
+VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format)
+{
+	VkImageViewCreateInfo color_image_view = {};
+	color_image_view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	color_image_view.pNext = NULL;
+	color_image_view.flags = 0;
+	color_image_view.image = image;
+	color_image_view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	color_image_view.format = format;
+	color_image_view.components.r = VK_COMPONENT_SWIZZLE_R;
+	color_image_view.components.g = VK_COMPONENT_SWIZZLE_G;
+	color_image_view.components.b = VK_COMPONENT_SWIZZLE_B;
+	color_image_view.components.a = VK_COMPONENT_SWIZZLE_A;
+	color_image_view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	color_image_view.subresourceRange.baseMipLevel = 0;
+	color_image_view.subresourceRange.levelCount = 1;
+	color_image_view.subresourceRange.baseArrayLayer = 0;
+	color_image_view.subresourceRange.layerCount = 1;
+
+	VkImageView view;
+
+	VK_CHECK(vkCreateImageView(device, &color_image_view, NULL, &view));
+	return view;
+}
+
+
+GpuImage CreateImage(VulkanData& data, uint32_t x, uint32_t y, VkFormat format, VkImageTiling tiling, VkSampler sampler, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryProperties)
+{
+	GpuImage image;
+	VkImageCreateInfo image_info;
+
+	image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	image_info.pNext = NULL;
+	image_info.imageType = VK_IMAGE_TYPE_2D;
+	image_info.format = format;
+	image_info.extent.width = x;
+	image_info.extent.height = y;
+	image_info.extent.depth = 1;
+	image_info.mipLevels = 1;
+	image_info.arrayLayers = 1;
+	image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+	image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	image_info.usage = usageFlags;
+	image_info.queueFamilyIndexCount = 0;
+	image_info.pQueueFamilyIndices = NULL;
+	image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	image_info.flags = 0;
+	image_info.tiling = tiling;
+
+	VK_CHECK( vkCreateImage(data.device, &image_info, nullptr, &image.image) );
+
+	AllocateGpuMemory(data.device, image, memoryProperties);
+	VK_CHECK( vkBindImageMemory(data.device, image.image, image.memory, 0) );
+
+	image.view = CreateImageView(data.device, image.image, format);
+
+	VkDescriptorImageInfo descriptorImageInfo = {};
+	descriptorImageInfo.sampler = sampler;
+	descriptorImageInfo.imageView = image.view;
+	descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	image.descriptorInfo = descriptorImageInfo;
+
+	return image;
+}
+
+void CopyBufferToImage(VkCommandBuffer cmdBuffer, VkBuffer srcBuffer, VkImage dstImage, uint32_t x, uint32_t y)
+{
+	VkBufferImageCopy region = {};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = {
+		x,
+		y,
+		1
+	};
+
+	vkCmdCopyBufferToImage(
+		cmdBuffer,
+		srcBuffer,
+		dstImage,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&region
+	);
+}
+
+
+void TransitionImage(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout )
+{
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+	barrier.srcAccessMask = 0; // handled below
+	barrier.dstAccessMask = 0; 
+
+	VkPipelineStageFlags sourceStage, destinationStage;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else {
+		assert(false && "Unsupported Transition!");
+	}
+
+	vkCmdPipelineBarrier(
+		cmdBuffer,
+		sourceStage, destinationStage,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
+}
+
 
 void UploadTexture(unsigned char* texture, int x, int y)
 {
 	// implicit usage of data for now
 	auto& data = s_vulkanData;
-
 	size_t imageSize = x * y * sizeof(char);
-
-	VkFormatProperties formatProps;
-	vkGetPhysicalDeviceFormatProperties(data.gpu, VK_FORMAT_R8_UNORM, &formatProps);
-
-	VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-	bool needStaging = ((formatProps.linearTilingFeatures & features) != features) ? true : false;
 
 	auto stagingBuffer = CreateBuffer(data, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
@@ -1425,4 +1617,49 @@ void UploadTexture(unsigned char* texture, int x, int y)
 	vkMapMemory(data.device, stagingBuffer.memory, 0, stagingBuffer.memorySize, 0, &cpuMemory);
 	memcpy(cpuMemory, texture, imageSize);
 	vkUnmapMemory(data.device, stagingBuffer.memory);
+
+	auto gpuTexture = CreateImage(data, x, y, VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL, data.linearClampSampler, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	VkWriteDescriptorSet writes[2];
+	writes[0] = {};
+	writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writes[0].pNext = NULL;
+	writes[0].dstSet = data.descriptorSets[0];
+	writes[0].descriptorCount = 1;
+	writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writes[0].pBufferInfo = &data.uniformBuffer.descriptorInfo;
+	writes[0].dstArrayElement = 0;
+	writes[0].dstBinding = 0;
+
+	writes[1] = {};
+	writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writes[1].pNext = NULL;
+	writes[1].dstSet = data.descriptorSets[0];
+	writes[1].descriptorCount = 1;
+	writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writes[1].pImageInfo = &gpuTexture.descriptorInfo;
+	writes[1].dstArrayElement = 0;
+	writes[1].dstBinding = 1;
+
+	vkUpdateDescriptorSets(data.device, 2, writes, 0, NULL);
+
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.pNext = nullptr;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	beginInfo.pInheritanceInfo = nullptr;
+
+	vkBeginCommandBuffer(data.cmdBuffer, &beginInfo);
+	TransitionImage(data.cmdBuffer, gpuTexture.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	CopyBufferToImage(data.cmdBuffer, stagingBuffer.buffer, gpuTexture.image, x, y);
+	TransitionImage(data.cmdBuffer, gpuTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	vkEndCommandBuffer(data.cmdBuffer);
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &data.cmdBuffer;
+
+	vkQueueSubmit(data.queue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(data.queue);
 }
