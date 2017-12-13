@@ -376,7 +376,7 @@ void InitFontAtlas(const char* path)
 
 	stbtt_pack_context spc;
 	stbtt_PackBegin(&spc, bitmap, 512, 512, 0, 1, nullptr);
-	//stbtt_PackSetOversampling(&spc, 2, 2);
+	stbtt_PackSetOversampling(&spc, 2, 2);
 
 	stbtt_PackFontRange(&spc, fontBuffer, 0, -30, 'a', 26, packedChars);
 	stbtt_PackEnd(&spc);
@@ -385,75 +385,6 @@ void InitFontAtlas(const char* path)
 
 void DrawHelloWorld( sf::RenderWindow* window)
 {
-	/*
-	static sf::Clock timer;
-
-	static const char hello[] = "hello world potato";
-	stbtt_aligned_quad quads[ARRAY_COUNT(hello)];
-
-	float startPosX = 500;
-	float startPosY = 200;
-
-	// fill out quads
-	for (int i = 0; i < ARRAY_COUNT(hello); i++)
-	{
-		stbtt_GetPackedQuad(packedChars, 512, 512, hello[i] - 'a', &startPosX, &startPosY, &quads[0], false);
-	}
-
-	glBindBuffer(myVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quads), quads, GL_STATIC_DRAW);
-
-
-	
-	window->setActive(true);
-	
-	glUseProgram(shaderProgram);
-	
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, myVBO);
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
-
-	constexpr auto offset = (&quads[0].x1 - &quads[0].x0) *sizeof(float);
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, myVBO);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)offset);
-
-	// go from screen size to -1 1
-
-	GLint loc = glGetUniformLocation(shaderProgram, "toClip");
-	auto windowSize = window->getSize();
-	glUniform2f(loc, windowSize.x, windowSize.y);
-
-
-	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-
-	/*
-	glEnable(GL_TEXTURE_2D);
-	
-	sf::Shader::bind(both);
-	glBindTexture(GL_TEXTURE_2D, ftex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBegin(GL_QUADS);
-
-
-	for (int i = 0; i < ARRAY_COUNT(hello); i++)
-	{
-		auto& q = quads[i];
-
-		glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0 );
-		glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0 );
-		glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1 );
-		glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1 );
-
-	}
-	glEnd();
-
-
-	window->setActive(false);
-
-	*/
 
 }
 

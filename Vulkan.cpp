@@ -14,6 +14,7 @@
 #include <vulkan\vk_layer.h>
 
 #include "ShaderCompiler.h"
+#include "Vulkan.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -988,7 +989,7 @@ void CreateVertexBuffer(VulkanData& data)
 	data.vertexAttributes[1].offset = 16;
 }
 
-void CreatePipeline(VulkanData& data)
+void Renderer::CreatePipeline()
 {
 	VkDynamicState dynamicStateEnables[VK_DYNAMIC_STATE_RANGE_SIZE];
 	VkPipelineDynamicStateCreateInfo dynamicState = {};
@@ -1003,9 +1004,9 @@ void CreatePipeline(VulkanData& data)
 	vi.pNext = NULL;
 	vi.flags = 0;
 	vi.vertexBindingDescriptionCount = 1;
-	vi.pVertexBindingDescriptions = &data.vertexBinding;
+	vi.pVertexBindingDescriptions = &m_vertexBinding;
 	vi.vertexAttributeDescriptionCount = 2;
-	vi.pVertexAttributeDescriptions = data.vertexAttributes;
+	vi.pVertexAttributeDescriptions = m_vertexAttributes;
 
 	VkPipelineInputAssemblyStateCreateInfo ia;
 	ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1093,36 +1094,36 @@ void CreatePipeline(VulkanData& data)
 	ms.alphaToOneEnable = VK_FALSE;
 	ms.minSampleShading = 0.0;
 
-	VkGraphicsPipelineCreateInfo pipeline;
-	pipeline.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipeline.pNext = NULL;
-	pipeline.layout = data.pipelineLayout;
-	pipeline.basePipelineHandle = VK_NULL_HANDLE;
-	pipeline.basePipelineIndex = 0;
-	pipeline.flags = 0;
-	pipeline.pVertexInputState = &vi;
-	pipeline.pInputAssemblyState = &ia;
-	pipeline.pRasterizationState = &rs;
-	pipeline.pColorBlendState = &cb;
-	pipeline.pTessellationState = NULL;
-	pipeline.pMultisampleState = &ms;
-	pipeline.pDynamicState = &dynamicState;
-	pipeline.pViewportState = &vp;
-	pipeline.pDepthStencilState = &ds;
+	VkGraphicsPipelineCreateInfo pipelineInfo;
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.pNext = NULL;
+	pipelineInfo.layout = m_pipelineLayout;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo.basePipelineIndex = 0;
+	pipelineInfo.flags = 0;
+	pipelineInfo.pVertexInputState = &vi;
+	pipelineInfo.pInputAssemblyState = &ia;
+	pipelineInfo.pRasterizationState = &rs;
+	pipelineInfo.pColorBlendState = &cb;
+	pipelineInfo.pTessellationState = NULL;
+	pipelineInfo.pMultisampleState = &ms;
+	pipelineInfo.pDynamicState = &dynamicState;
+	pipelineInfo.pViewportState = &vp;
+	pipelineInfo.pDepthStencilState = &ds;
 
-	VkPipelineShaderStageCreateInfo stages[] = { data.vertexStage, data.fragmentStage };
-	pipeline.pStages = stages;
-	pipeline.stageCount = 2;
-	pipeline.renderPass = data.renderPass;
-	pipeline.subpass = 0;
+	VkPipelineShaderStageCreateInfo stages[] = { m_vertexStage, m_fragmentStage };
+	pipelineInfo.pStages = stages;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.renderPass = m_renderPass;
+	pipelineInfo.subpass = 0;
 
-	VK_CHECK( vkCreateGraphicsPipelines(data.device, NULL, 1, &pipeline, NULL, &data.pipeline) );
+	VK_CHECK( vkCreateGraphicsPipelines(m_device, NULL, 1, &pipelineInfo, NULL, &m_pipeline) );
 }
 
-VkCommandBuffer BeginRenderPass(VulkanData& data)
+VkCommandBuffer Renderer::BeginRenderPass()
 {
 	// Get the index of the next available swapchain image:
-	VK_CHECK(vkAcquireNextImageKHR(data.device, data.swapchain, UINT64_MAX, data.imageAcquireSemaphore, VK_NULL_HANDLE, &data.currentSwapchainIndex));
+	VK_CHECK(vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, m_imageAcquireSemaphore, VK_NULL_HANDLE, &m_currentSwapchainIndex));
 
 	VkCommandBufferBeginInfo cmd_buf_info = {};
 	cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1141,82 +1142,81 @@ VkCommandBuffer BeginRenderPass(VulkanData& data)
 	VkRenderPassBeginInfo rp_begin;
 	rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	rp_begin.pNext = NULL;
-	rp_begin.renderPass = data.renderPass;
-	rp_begin.framebuffer = data.framebuffers[data.currentSwapchainIndex];
+	rp_begin.renderPass = m_renderPass;
+	rp_begin.framebuffer = m_framebuffers[m_currentSwapchainIndex];
 	rp_begin.renderArea.offset.x = 0;
 	rp_begin.renderArea.offset.y = 0;
-	rp_begin.renderArea.extent.width = data.framebufferWidth;
-	rp_begin.renderArea.extent.height = data.framebufferHeight;
+	rp_begin.renderArea.extent.width = m_framebufferWidth;
+	rp_begin.renderArea.extent.height = m_framebufferHeight;
 	rp_begin.clearValueCount = 2;
 	rp_begin.pClearValues = clear_values;
 
-	VK_CHECK(vkBeginCommandBuffer(data.cmdBuffer, &cmd_buf_info));
-	vkCmdBeginRenderPass(data.cmdBuffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+	VK_CHECK(vkBeginCommandBuffer(m_cmdBuffer, &cmd_buf_info));
+	vkCmdBeginRenderPass(m_cmdBuffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
-	vkResetFences(data.device, 1, &data.frameFence);
+	vkResetFences(m_device, 1, &m_frameFence);
 
-	return data.cmdBuffer;
+	return m_cmdBuffer;
 }
 
 
-void EndRenderPass(VkCommandBuffer cmdBuffer)
+void Renderer::EndRenderPass(VkCommandBuffer cmdBuffer)
 {
 	vkCmdEndRenderPass(cmdBuffer);
 	VK_CHECK(vkEndCommandBuffer(cmdBuffer));
 }
 
-void SubmitCommandBuffers(VulkanData& data, VkCommandBuffer* cmdBuffers, uint32_t commandBufferCount, VkFence fence)
+void Renderer::SubmitCommandBuffers(VkCommandBuffer* cmdBuffers, uint32_t commandBufferCount, VkFence fence)
 {
-	VkPipelineStageFlags pipe_stage_flags =
-		VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 	VkSubmitInfo submit_info[1] = {};
 	submit_info[0].pNext = NULL;
 	submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submit_info[0].waitSemaphoreCount = 1;
-	submit_info[0].pWaitSemaphores = &data.imageAcquireSemaphore;
+	submit_info[0].pWaitSemaphores = &m_imageAcquireSemaphore;
 	submit_info[0].pWaitDstStageMask = &pipe_stage_flags;
 	submit_info[0].commandBufferCount = commandBufferCount;
 	submit_info[0].pCommandBuffers = cmdBuffers;
 	submit_info[0].signalSemaphoreCount = 0;
 	submit_info[0].pSignalSemaphores = NULL;
-	VK_CHECK(vkQueueSubmit(data.queue, 1, submit_info, fence));
+	VK_CHECK(vkQueueSubmit(m_queue, 1, submit_info, fence));
 }
 
-bool WaitForFence(VulkanData& data, VkFence fence, uint64_t timeoutNanos)
+bool Renderer::WaitForFence(VkFence fence, uint64_t timeoutNanos)
 {
-	auto res = vkWaitForFences(data.device, 1, &fence, VK_TRUE, timeoutNanos);
+	auto res = vkWaitForFences(m_device, 1, &fence, VK_TRUE, timeoutNanos);
 	return res == VK_TIMEOUT;
 }
 
-void SetViewportAndScissor(VulkanData& data, VkCommandBuffer cmdBuffer, sf::Vector2u size, sf::Vector2u offset)
+void Renderer::SetViewportAndScissor(VkCommandBuffer cmdBuffer, sf::Vector2u size, sf::Vector2u offset)
 {
-	data.viewport.width = static_cast<float>(size.x);
-	data.viewport.height = static_cast<float>(size.y);
-	data.viewport.minDepth = 0.0f;
-	data.viewport.maxDepth = 1.0f;
-	data.viewport.x = static_cast<float>(offset.x);
-	data.viewport.y = static_cast<float>(offset.y);
-	vkCmdSetViewport(cmdBuffer, 0, 1, &data.viewport);
+	m_viewport.width = static_cast<float>(size.x);
+	m_viewport.height = static_cast<float>(size.y);
+	m_viewport.minDepth = 0.0f;
+	m_viewport.maxDepth = 1.0f;
+	m_viewport.x = static_cast<float>(offset.x);
+	m_viewport.y = static_cast<float>(offset.y);
+	vkCmdSetViewport(cmdBuffer, 0, 1, &m_viewport);
 
-	data.scissor.extent.width = size.x;
-	data.scissor.extent.height = size.y;
-	data.scissor.offset.x = offset.x;
-	data.scissor.offset.y = offset.y;
-	vkCmdSetScissor(cmdBuffer, 0, 1, &data.scissor);
+	m_scissor.extent.width = size.x;
+	m_scissor.extent.height = size.y;
+	m_scissor.offset.x = offset.x;
+	m_scissor.offset.y = offset.y;
+	vkCmdSetScissor(cmdBuffer, 0, 1, &m_scissor);
 }
 
-void Present(VulkanData& data)
+void Renderer::Present()
 {
 	VkPresentInfoKHR present;
 	present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	present.pNext = NULL;
 	present.swapchainCount = 1;
-	present.pSwapchains = &data.swapchain;
-	present.pImageIndices = &data.currentSwapchainIndex;
+	present.pSwapchains = &m_swapchain;
+	present.pImageIndices = &m_currentSwapchainIndex;
 	present.pWaitSemaphores = NULL;
 	present.waitSemaphoreCount = 0;
 	present.pResults = NULL;
-	VK_CHECK(vkQueuePresentKHR(data.queue, &present));
+	VK_CHECK(vkQueuePresentKHR(m_queue, &present));
 }
 
 
