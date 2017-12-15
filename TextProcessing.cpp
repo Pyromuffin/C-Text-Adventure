@@ -386,5 +386,7 @@ void InitFontAtlas(const char* path)
 void DrawHelloWorld( sf::RenderWindow* window)
 {
 
+
+
 }
 

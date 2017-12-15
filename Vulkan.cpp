@@ -23,6 +23,11 @@
 
 
 
+static vk::Result __s_debugResult;
+#define VK_CHECK( func ) \
+__s_debugResult = func; \
+assert(__s_debugResult == vk::eSuccess)
+
 
 void init_instance_extension_names( std::vector<const char*>& extensionNames ) {
 #ifdef __ANDROID__
@@ -42,39 +47,23 @@ void init_instance_extension_names( std::vector<const char*>& extensionNames ) {
 	extensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 }
 
-struct GpuImage
-{
-	VkImage image;
-	VkImageView view;
-	VkDescriptorImageInfo descriptorInfo;
 
-	VkDeviceMemory memory;
-	VkDeviceSize memorySize;
-};
-
-struct GpuBuffer
-{
-	VkBuffer buffer;
-	VkDescriptorBufferInfo descriptorInfo;
-	VkDeviceMemory memory;
-	VkDeviceSize memorySize;
-};
-
+/*
 struct VulkanData
 {
 	int framebufferWidth;
 	int framebufferHeight;
 
-	VkInstance instance;
-	VkPhysicalDevice gpu;
-	VkDevice device;
-	VkPhysicalDeviceMemoryProperties memoryProps;
+	vk::Instance instance;
+	vk::PhysicalDevice gpu;
+	vk::Device device;
+	vk::PhysicalDeviceMemoryProperties memoryProps;
 
 	uint32_t queueFamilyIndex;
-	VkQueue queue;
+	vk::Queue queue;
 
-	VkCommandPool cmdBufferPool;
-	VkCommandBuffer cmdBuffer;
+	vk::CommandPool cmdBufferPool;
+	vk::CommandBuffer cmdBuffer;
 
 	VkSurfaceKHR presentSurface;
 	VkFormat swapchainFormat;
@@ -109,7 +98,7 @@ struct VulkanData
 
 	VkPipeline pipeline;
 };
-
+*/
 
 void CreateSurface(sf::Window* window, VulkanData& data)
 {
@@ -507,10 +496,6 @@ bool GetMemoryTypeIndexFromProps(const VkPhysicalDeviceMemoryProperties& memoryP
 	return false;
 }
 
-static VkResult __s_debugResult;
-#define VK_CHECK( func ) \
-__s_debugResult = func; \
-assert(__s_debugResult == VK_SUCCESS )
 
 void CreateDepthBuffer(VulkanData& data)
 {
@@ -635,7 +620,7 @@ void CreateUniformBuffer(VulkanData& data)
 	VK_CHECK( vkBindBufferMemory(data.device, data.uniformBuffer.buffer, data.uniformBuffer.memory, 0) );
 }
 
-void CreateDescriptors(VulkanData& data)
+void CreateDescriptors()
 {
 	VkDescriptorSetLayoutBinding vertex_binding = {};
 	vertex_binding.binding = 0;
@@ -948,8 +933,19 @@ void AllocateGpuMemory(VkDevice device, T& obj, VkMemoryPropertyFlags memoryFlag
 	obj.memorySize = reqs.size;
 }
 
-void CreateVertexBuffer(VulkanData& data)
+enum NiftyFlags
 {
+	CpuMappableMemory = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+
+
+};
+
+void CreateVertexBuffer(Renderer& renderer)
+{
+
+	auto vertexBuffer =  renderer.CreateBuffer()
+
+
 	VkBufferCreateInfo buf_info = {};
 	buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	buf_info.pNext = NULL;
@@ -960,10 +956,10 @@ void CreateVertexBuffer(VulkanData& data)
 	buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	buf_info.flags = 0;
 	
-	VK_CHECK( vkCreateBuffer(data.device, &buf_info, NULL, &data.vertexBuffer.buffer) );
+	VK_CHECK( vkCreateBuffer(renderer.device, &buf_info, NULL, &data.vertexBuffer.buffer) );
 
 	
-	AllocateGpuMemory(data.device, data.vertexBuffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	AllocateGpuMemory(data.device, data.vertexBuffer, NiftyFlags::CpuMappableMemory);
 
 	uint8_t *pData;
 	vkMapMemory(data.device, data.vertexBuffer.memory, 0, data.vertexBuffer.memorySize, 0, (void **)&pData);
@@ -1327,8 +1323,6 @@ void Cube(VulkanData& data)
 
 }
 
-void UploadTexture(unsigned char* texture, int x, int y);
-
 static VulkanData s_vulkanData;
 
 void InitVulkan(sf::Window* window, unsigned char* texture, int x, int y)
@@ -1436,7 +1430,7 @@ void RenderFrame(sf::Window* window)
 }
 
 
-GpuBuffer CreateBuffer(VulkanData& data, VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryProperties)
+GpuBuffer Renderer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryProperties)
 {
 	GpuBuffer buffer;
 
@@ -1449,11 +1443,11 @@ GpuBuffer CreateBuffer(VulkanData& data, VkDeviceSize size, VkBufferUsageFlags u
 	buf_info.pQueueFamilyIndices = NULL;
 	buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	buf_info.flags = 0;
-	VK_CHECK( vkCreateBuffer(data.device, &buf_info, NULL, &buffer.buffer) );
+	VK_CHECK( vkCreateBuffer(m_device, &buf_info, NULL, &buffer.buffer) );
 
-	AllocateGpuMemory(data.device, buffer, memoryProperties);
+	AllocateGpuMemory(m_device, buffer, memoryProperties);
 
-	VK_CHECK(vkBindBufferMemory(data.device, buffer.buffer, buffer.memory, 0));
+	VK_CHECK(vkBindBufferMemory(m_device, buffer.buffer, buffer.memory, 0));
 
 	return buffer;
 }
@@ -1485,7 +1479,7 @@ VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format)
 }
 
 
-GpuImage CreateImage(VulkanData& data, uint32_t x, uint32_t y, VkFormat format, VkImageTiling tiling, VkSampler sampler, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryProperties)
+GpuImage Renderer::CreateImage(uint32_t x, uint32_t y, VkFormat format, VkImageTiling tiling, VkSampler sampler, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryProperties)
 {
 	GpuImage image;
 	VkImageCreateInfo image_info;
@@ -1508,12 +1502,12 @@ GpuImage CreateImage(VulkanData& data, uint32_t x, uint32_t y, VkFormat format, 
 	image_info.flags = 0;
 	image_info.tiling = tiling;
 
-	VK_CHECK( vkCreateImage(data.device, &image_info, nullptr, &image.image) );
+	VK_CHECK( vkCreateImage(m_device, &image_info, nullptr, &image.image) );
 
-	AllocateGpuMemory(data.device, image, memoryProperties);
-	VK_CHECK( vkBindImageMemory(data.device, image.image, image.memory, 0) );
+	AllocateGpuMemory(m_device, image, memoryProperties);
+	VK_CHECK( vkBindImageMemory(m_device, image.image, image.memory, 0) );
 
-	image.view = CreateImageView(data.device, image.image, format);
+	image.view = CreateImageView(m_device, image.image, format);
 
 	VkDescriptorImageInfo descriptorImageInfo = {};
 	descriptorImageInfo.sampler = sampler;
@@ -1524,7 +1518,7 @@ GpuImage CreateImage(VulkanData& data, uint32_t x, uint32_t y, VkFormat format, 
 	return image;
 }
 
-void CopyBufferToImage(VkCommandBuffer cmdBuffer, VkBuffer srcBuffer, VkImage dstImage, uint32_t x, uint32_t y)
+void Renderer::CopyBufferToImage(VkCommandBuffer cmdBuffer, VkBuffer srcBuffer, VkImage dstImage, uint32_t x, uint32_t y)
 {
 	VkBufferImageCopy region = {};
 	region.bufferOffset = 0;
@@ -1554,7 +1548,7 @@ void CopyBufferToImage(VkCommandBuffer cmdBuffer, VkBuffer srcBuffer, VkImage ds
 }
 
 
-void TransitionImage(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout )
+void Renderer::TransitionImage(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout )
 {
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -1605,10 +1599,9 @@ void TransitionImage(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout old
 }
 
 
-void UploadTexture(unsigned char* texture, int x, int y)
+void Renderer::UploadTexture(unsigned char* texture, int x, int y)
 {
 	// implicit usage of data for now
-	auto& data = s_vulkanData;
 	size_t imageSize = x * y * sizeof(char);
 
 	auto stagingBuffer = CreateBuffer(data, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -1641,7 +1634,7 @@ void UploadTexture(unsigned char* texture, int x, int y)
 	writes[1].dstArrayElement = 0;
 	writes[1].dstBinding = 1;
 
-	vkUpdateDescriptorSets(data.device, 2, writes, 0, NULL);
+	vkUpdateDescriptorSets(data.device, 1, writes, 0, NULL);
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1662,4 +1655,7 @@ void UploadTexture(unsigned char* texture, int x, int y)
 
 	vkQueueSubmit(data.queue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(data.queue);
+
+	vkDestroyBuffer(data.device, stagingBuffer.buffer, nullptr);
+	vkFreeMemory(data.device, stagingBuffer.memory, nullptr);
 }
