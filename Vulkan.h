@@ -1,6 +1,6 @@
 
 #pragma once
-
+#include <optional>
 #include <vulkan/vulkan.hpp>
 
 class sf::Window;
@@ -93,88 +93,119 @@ public:
 		void TransitionImage(VkCommandBuffer cmdBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
 };
 
-class Pass
+class Pipeline
 {
-	bool m_ready;
+	vk::Device m_device;
+
+	Pipeline(vk::Device device)
+	{
+		m_device = device;
+	}
+
+	bool m_ready = false;
 
 	std::vector<vk::DescriptorSetLayoutBinding> m_bindings;
-	int m_uniqueBindings = 0;
-	//std::vector<vk::DescriptorSetLayoutBinding> m_vertexBindings;
-	//std::vector<vk::DescriptorSetLayoutBinding> m_fragmentBindings;
-
-
-
-	vk::VertexInputBindingDescription m_vertexBindingDesc;
-	vk::VertexInputAttributeDescription m_vertexAttributes[2];
+	std::vector<vk::VertexInputBindingDescription> m_vertexBufferBindings;
+	std::vector<vk::VertexInputAttributeDescription> m_vertexAttributes;
 
 	vk::UniqueDescriptorSetLayout m_descriptorLayout;
 	vk::UniquePipelineLayout m_pipelineLayout;
 	vk::UniqueDescriptorPool m_descriptorPool;
-	vk::RenderPass m_renderPass;
 
 	vk::PipelineShaderStageCreateInfo m_vertexStage;
 	vk::PipelineShaderStageCreateInfo m_fragmentStage;
-	vk::Pipeline m_pipeline;
+	vk::UniqueShaderModule m_vertexModule;
+	vk::UniqueShaderModule m_fragmentModule;
+
+	vk::UniquePipeline m_pipeline;
 
 
-	bool IsBindingUnique(int bindingPoint)
+	std::optional<vk::DescriptorSetLayoutBinding&> HasExistingBinding(int bindingPoint)
 	{
 		for (auto& binding : m_bindings)
 		{
 			if (bindingPoint == binding.binding)
-				return false;
+			{
+				return std::make_optional(binding);
+			}
 		}
 
-		return true;
+		return std::nullopt;
+	}
+
+
+	void AddVertexBufferBinding(int bindingPoint, int size, vk::VertexInputRate inputRate)
+	{
+		m_vertexBufferBindings.push_back( vk::VertexInputBindingDescription(bindingPoint, size, inputRate) );
+	}
+
+	void AddVertexBufferAttribute(int bindingPoint, int indexInBinding, vk::Format format, int offset)
+	{
+		m_vertexAttributes.push_back(vk::VertexInputAttributeDescription(indexInBinding, bindingPoint, format, offset));
 	}
 
 	void AddVertexBinding(int bindingPoint, int count, vk::DescriptorType type)
 	{
-		vk::DescriptorSetLayoutBinding vertex_binding;
-		vertex_binding.binding = bindingPoint;
-		vertex_binding.descriptorType = type;
-		vertex_binding.descriptorCount = count;
-		vertex_binding.stageFlags = vk::ShaderStageFlagBits::eVertex;
-		vertex_binding.pImmutableSamplers = NULL;
-
-		 m_bindings.push_back(vertex_binding);
-		 if (IsBindingUnique(bindingPoint))
-			 m_uniqueBindings++;
-		
+		auto maybeBinding = HasExistingBinding(bindingPoint);
+		if(maybeBinding)
+		{
+			auto& binding = *maybeBinding;
+			assert(binding.descriptorType == type);
+			assert(binding.descriptorCount == count);
+			binding.stageFlags |= vk::ShaderStageFlagBits::eVertex;
+		}
+		else
+		{
+			vk::DescriptorSetLayoutBinding vertex_binding;
+			vertex_binding.binding = bindingPoint;
+			vertex_binding.descriptorType = type;
+			vertex_binding.descriptorCount = count;
+			vertex_binding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+			vertex_binding.pImmutableSamplers = NULL;
+			m_bindings.push_back(vertex_binding);
+		}
 	};
 
 	void AddFragmentBinding(int bindingPoint, int count, vk::DescriptorType type)
 	{
-		vk::DescriptorSetLayoutBinding fragment_binding;
-		fragment_binding.binding = bindingPoint;
-		fragment_binding.descriptorType = type;
-		fragment_binding.descriptorCount = count;
-		fragment_binding.stageFlags = vk::ShaderStageFlagBits::eFragment;
-		fragment_binding.pImmutableSamplers = NULL;
-		
-		m_bindings.push_back(fragment_binding);
-		if (IsBindingUnique(bindingPoint))
-			m_uniqueBindings++;
+		auto maybeBinding = HasExistingBinding(bindingPoint);
+		if (maybeBinding)
+		{
+			auto& binding = *maybeBinding;
+			assert(binding.descriptorType == type);
+			assert(binding.descriptorCount == count);
+			binding.stageFlags |= vk::ShaderStageFlagBits::eFragment;
+		}
+		else
+		{
+			vk::DescriptorSetLayoutBinding vertex_binding;
+			vertex_binding.binding = bindingPoint;
+			vertex_binding.descriptorType = type;
+			vertex_binding.descriptorCount = count;
+			vertex_binding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+			vertex_binding.pImmutableSamplers = NULL;
+			m_bindings.push_back(vertex_binding);
+		}
 	};
 
 
-	void CreateDescriptors(vk::Device device, int maxSets)
+	void CreateDescriptors(int maxSets)
 	{
 		vk::DescriptorSetLayoutCreateInfo descriptor_layout;
 		descriptor_layout.bindingCount = m_bindings.size();
 		descriptor_layout.pBindings = m_bindings.data();
-		m_descriptorLayout = device.createDescriptorSetLayoutUnique(descriptor_layout);
+		m_descriptorLayout = m_device.createDescriptorSetLayoutUnique(descriptor_layout);
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &m_descriptorLayout.get();
 
-		m_pipelineLayout = device.createPipelineLayoutUnique(pipelineLayoutInfo);
+		m_pipelineLayout = m_device.createPipelineLayoutUnique(pipelineLayoutInfo);
 
 		std::vector<vk::DescriptorPoolSize> poolSizes(m_bindings.size());
 		for (auto& binding : m_bindings)
 		{
-			vk::DescriptorPoolSize size{ binding.descriptorType, binding.descriptorCount }; // THIS IS WRONG, WILL DOUBLE COUNT NON-UNIQUE BINDINGS!
+			vk::DescriptorPoolSize size{ binding.descriptorType, binding.descriptorCount };
 			poolSizes.push_back(size);
 		}
 
@@ -183,10 +214,39 @@ class Pass
 		descriptor_pool.poolSizeCount = poolSizes.size();
 		descriptor_pool.pPoolSizes = poolSizes.data();
 
-		m_descriptorPool = device.createDescriptorPoolUnique(descriptor_pool);
+		m_descriptorPool = m_device.createDescriptorPoolUnique(descriptor_pool);
 	}
 
-	void CreatePipeline(vk::Device device)
+	void CreateVertexShader(const char* shaderText, const char* shaderName)
+	{
+		auto spv = CompileShaderString(shaderText, shaderc_glsl_vertex_shader, shaderName);
+		vk::ShaderModuleCreateInfo info;
+		info.pCode = spv.data();
+		info.codeSize = spv.size() * sizeof(uint32_t);
+
+		m_vertexModule = m_device.createShaderModuleUnique(info);
+		
+		m_vertexStage.module = m_vertexModule.get();
+		m_vertexStage.pName = shaderName;
+		m_vertexStage.stage = vk::ShaderStageFlagBits::eVertex;
+	}
+	
+	void CreateFragmentShader(const char* shaderText, const char* shaderName)
+	{
+		auto spv = CompileShaderString(shaderText, shaderc_glsl_vertex_shader, shaderName);
+		vk::ShaderModuleCreateInfo info;
+		info.pCode = spv.data();
+		info.codeSize = spv.size() * sizeof(uint32_t);
+
+		m_fragmentModule = m_device.createShaderModuleUnique(info);
+
+		m_fragmentStage.module = m_fragmentModule.get();
+		m_fragmentStage.pName = shaderName;
+		m_fragmentStage.stage = vk::ShaderStageFlagBits::eFragment;
+	}
+
+
+	void CreatePipeline(vk::RenderPass renderPass, int subpass = 0)
 	{
 		vk::DynamicState dynamicStateEnables[VK_DYNAMIC_STATE_RANGE_SIZE];
 		vk::PipelineDynamicStateCreateInfo dynamicState = {};
@@ -194,25 +254,19 @@ class Pass
 		dynamicState.dynamicStateCount = 0;
 
 		vk::PipelineVertexInputStateCreateInfo vi;
-		vi.vertexBindingDescriptionCount = m_vertexBindings.size();
-		vi.pVertexBindingDescriptions = m_vertexBindings.data();
-		vi.vertexAttributeDescriptionCount = 2;
-		vi.pVertexAttributeDescriptions = m_vertexAttributes;
+		vi.vertexBindingDescriptionCount = m_vertexBufferBindings.size();
+		vi.pVertexBindingDescriptions = m_vertexBufferBindings.data();
+		vi.vertexAttributeDescriptionCount = m_vertexAttributes.size();
+		vi.pVertexAttributeDescriptions = m_vertexAttributes.data();
 
-		VkPipelineInputAssemblyStateCreateInfo ia;
-		ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		ia.pNext = NULL;
-		ia.flags = 0;
+		vk::PipelineInputAssemblyStateCreateInfo ia;
 		ia.primitiveRestartEnable = VK_FALSE;
-		ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		ia.topology = vk::PrimitiveTopology::eTriangleList;
 
-		VkPipelineRasterizationStateCreateInfo rs;
-		rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		rs.pNext = NULL;
-		rs.flags = 0;
-		rs.polygonMode = VK_POLYGON_MODE_FILL;
-		rs.cullMode = VK_CULL_MODE_BACK_BIT;
-		rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		vk::PipelineRasterizationStateCreateInfo rs;
+		rs.polygonMode = vk::PolygonMode::eFill;
+		rs.cullMode = vk::CullModeFlagBits::eBack;
+		rs.frontFace = vk::FrontFace::eClockwise;
 		rs.depthClampEnable = VK_FALSE;
 		rs.rasterizerDiscardEnable = VK_FALSE;
 		rs.depthBiasEnable = VK_FALSE;
@@ -221,77 +275,63 @@ class Pass
 		rs.depthBiasSlopeFactor = 0;
 		rs.lineWidth = 1.0f;
 
-		VkPipelineColorBlendStateCreateInfo cb;
-		cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		cb.pNext = NULL;
-		cb.flags = 0;
-		VkPipelineColorBlendAttachmentState att_state[1];
-		att_state[0].colorWriteMask = 0xf;
+		vk::PipelineColorBlendStateCreateInfo cb; // we will probably want alpha blending at some point.
+
+		vk::PipelineColorBlendAttachmentState att_state[1];
+		att_state[0].colorWriteMask = (vk::ColorComponentFlagBits)0xf;
 		att_state[0].blendEnable = VK_FALSE;
-		att_state[0].alphaBlendOp = VK_BLEND_OP_ADD;
-		att_state[0].colorBlendOp = VK_BLEND_OP_ADD;
-		att_state[0].srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-		att_state[0].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-		att_state[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		att_state[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		att_state[0].alphaBlendOp = vk::BlendOp::eAdd;
+		att_state[0].colorBlendOp = vk::BlendOp::eAdd;
+		att_state[0].srcColorBlendFactor = vk::BlendFactor::eZero;
+		att_state[0].dstColorBlendFactor = vk::BlendFactor::eZero;
+		att_state[0].srcAlphaBlendFactor = vk::BlendFactor::eZero;
+		att_state[0].dstAlphaBlendFactor = vk::BlendFactor::eZero;
 		cb.attachmentCount = 1;
 		cb.pAttachments = att_state;
 		cb.logicOpEnable = VK_FALSE;
-		cb.logicOp = VK_LOGIC_OP_NO_OP;
+		cb.logicOp = vk::LogicOp::eNoOp;
 		cb.blendConstants[0] = 1.0f;
 		cb.blendConstants[1] = 1.0f;
 		cb.blendConstants[2] = 1.0f;
 		cb.blendConstants[3] = 1.0f;
 
-		VkPipelineViewportStateCreateInfo vp = {};
-		vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		vp.pNext = NULL;
-		vp.flags = 0;
+		vk::PipelineViewportStateCreateInfo vp = {};
 		vp.viewportCount = 1;
-		dynamicStateEnables[dynamicState.dynamicStateCount++] = VK_DYNAMIC_STATE_VIEWPORT;
+		dynamicStateEnables[dynamicState.dynamicStateCount++] = vk::DynamicState::eViewport;
 		vp.scissorCount = 1;
-		dynamicStateEnables[dynamicState.dynamicStateCount++] = VK_DYNAMIC_STATE_SCISSOR;
+		dynamicStateEnables[dynamicState.dynamicStateCount++] = vk::DynamicState::eScissor;
 		vp.pScissors = NULL;
 		vp.pViewports = NULL;
 
-		VkPipelineDepthStencilStateCreateInfo ds;
-		ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		ds.pNext = NULL;
-		ds.flags = 0;
+		vk::PipelineDepthStencilStateCreateInfo ds; 
 		ds.depthTestEnable = VK_TRUE;
 		ds.depthWriteEnable = VK_TRUE;
-		ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+		ds.depthCompareOp = vk::CompareOp::eLessOrEqual;
 		ds.depthBoundsTestEnable = VK_FALSE;
 		ds.minDepthBounds = 0;
 		ds.maxDepthBounds = 0;
 		ds.stencilTestEnable = VK_FALSE;
-		ds.back.failOp = VK_STENCIL_OP_KEEP;
-		ds.back.passOp = VK_STENCIL_OP_KEEP;
-		ds.back.compareOp = VK_COMPARE_OP_ALWAYS;
+		ds.back.failOp = vk::StencilOp::eKeep;
+		ds.back.passOp = vk::StencilOp::eKeep;
+		ds.back.compareOp = vk::CompareOp::eAlways;
 		ds.back.compareMask = 0;
 		ds.back.reference = 0;
-		ds.back.depthFailOp = VK_STENCIL_OP_KEEP;
+		ds.back.depthFailOp = vk::StencilOp::eKeep;;
 		ds.back.writeMask = 0;
 		ds.front = ds.back;
 
-		VkPipelineMultisampleStateCreateInfo ms;
-		ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		ms.pNext = NULL;
-		ms.flags = 0;
+		vk::PipelineMultisampleStateCreateInfo ms; // same
 		ms.pSampleMask = NULL;
-		ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		ms.rasterizationSamples = vk::SampleCountFlagBits::e1;
 		ms.sampleShadingEnable = VK_FALSE;
 		ms.alphaToCoverageEnable = VK_FALSE;
 		ms.alphaToOneEnable = VK_FALSE;
 		ms.minSampleShading = 0.0;
 
-		VkGraphicsPipelineCreateInfo pipelineInfo;
-		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.pNext = NULL;
-		pipelineInfo.layout = m_pipelineLayout;
-		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+		vk::GraphicsPipelineCreateInfo pipelineInfo;
+		pipelineInfo.layout = m_pipelineLayout.get();
+		pipelineInfo.basePipelineHandle = vk::Pipeline(); // null handle!
 		pipelineInfo.basePipelineIndex = 0;
-		pipelineInfo.flags = 0;
 		pipelineInfo.pVertexInputState = &vi;
 		pipelineInfo.pInputAssemblyState = &ia;
 		pipelineInfo.pRasterizationState = &rs;
@@ -302,31 +342,24 @@ class Pass
 		pipelineInfo.pViewportState = &vp;
 		pipelineInfo.pDepthStencilState = &ds;
 
-		VkPipelineShaderStageCreateInfo stages[] = { m_vertexStage, m_fragmentStage };
+		vk::PipelineShaderStageCreateInfo stages[] = { m_vertexStage, m_fragmentStage };
 		pipelineInfo.pStages = stages;
 		pipelineInfo.stageCount = 2;
-		pipelineInfo.renderPass = m_renderPass;
-		pipelineInfo.subpass = 0;
+		pipelineInfo.renderPass = renderPass;
+		pipelineInfo.subpass = subpass;
 
-		VK_CHECK(vkCreateGraphicsPipelines(m_device, NULL, 1, &pipelineInfo, NULL, &m_pipeline));
+		m_pipeline = m_device.createGraphicsPipelineUnique(nullptr, pipelineInfo);
 
-
-
-
-
-
-
-
-
+		m_ready = true;
 	};
 
-	std::vector<vk::UniqueDescriptorSet> AllocateDescriptorSets(vk::Device device, int count = 1)
+	std::vector<vk::UniqueDescriptorSet> AllocateDescriptorSets(int count = 1)
 	{
 		vk::DescriptorSetAllocateInfo alloc_info;
 		alloc_info.descriptorPool = m_descriptorPool.get();
 		alloc_info.descriptorSetCount = count;
 		alloc_info.pSetLayouts = &m_descriptorLayout.get();
-		return device.allocateDescriptorSetsUnique(alloc_info);
+		return m_device.allocateDescriptorSetsUnique(alloc_info);
 	}
 
 };
