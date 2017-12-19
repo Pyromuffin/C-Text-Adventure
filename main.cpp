@@ -12,15 +12,12 @@
 #include "TextProcessing.h"
 #include "ShaderCompiler.h"
 
-#include <vulkan/vulkan.h>
-#include "Vulkan.h"
-
-
-
+#include "Renderer.h"
 
 
 static sf::Window* window; 
 static sf::Font font;
+static Renderer renderer;
 
 #define RALEWAY_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Raleway\\Raleway-Regular.ttf"
 #define INCONSOLATA_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Inconsolata\\Inconsolata-Regular.ttf"
@@ -29,25 +26,7 @@ static sf::Font font;
 
 static void InitSFML()
 {
-	
-	//sf::ContextSettings contextSettings{ 24, 8, 0, 4, 6, sf::ContextSettings::Core | sf::ContextSettings::Debug, false };
-	//sf::ContextSettings contextSettings{ 24, 8, 0, 4, 6, sf::ContextSettings::Default | sf::ContextSettings::Debug, false };
-
 	window = new sf::Window(sf::VideoMode(1000, 600), "C-Text-Adventure", sf::Style::Default);
-
-
-	/*
-	font.loadFromFile(INCONSOLATA_PATH);
-	
-	auto vs = CompileShader(VERTEX_SHADER_PATH, GL_VERTEX_SHADER);
-	auto fs = CompileShader(FRAGMENT_SHADER_PATH, GL_FRAGMENT_SHADER);
-
-	shaderProgram = LinkShaders(vs, fs);
-
-
-	glDeleteShader(vs);
-	glDeleteShader(fs);
-	*/
 }
 
 void error_callback(int error, const char* description)
@@ -70,8 +49,7 @@ static void Init()
 	InitFontAtlas(RALEWAY_PATH);
 
 	auto[bitmap, x, y] = GetBitmap();
-
-	InitVulkan(window, bitmap, x, y);
+	renderer.Init(window);
 }
 
 static void CleanUp()
@@ -247,7 +225,6 @@ int main(int argc, char *argv[])
 			commandString.Reset();
 		}
 
-		RenderFrame(window);
 		RenderText(commandString);
     }
 

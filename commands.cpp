@@ -20,6 +20,11 @@
 #include "GameScript.h"
 #include "GameState.h"
 
+template<class Archive> 
+void GameState::serialize(Archive &archive, const unsigned int version)
+{
+	archive(CEREAL_NVP(currentRoom), CEREAL_NVP(sneezePoints));
+}
 
 static bool s_CommandsRegistered[kCommandCount];
 Command g_AllCommands[kCommandCount];

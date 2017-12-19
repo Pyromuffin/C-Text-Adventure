@@ -17,6 +17,8 @@
 #ifndef VULKAN_HPP
 #define VULKAN_HPP
 
+//#define VULKAN_HPP_NO_EXCEPTIONS
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -905,9 +907,9 @@ namespace VULKAN_HPP_NAMESPACE
 
   VULKAN_HPP_INLINE ResultValueType<void>::type createResultValue( Result result, char const * message )
   {
-#ifdef VULKAN_HPP_NO_EXCEPTIONS
+#ifndef VULKAN_HPP_NO_EXCEPTIONS
     assert( result == Result::eSuccess );
-    return result;
+   // return result;
 #else
     if ( result != Result::eSuccess )
     {
@@ -919,9 +921,10 @@ namespace VULKAN_HPP_NAMESPACE
   template <typename T>
   VULKAN_HPP_INLINE typename ResultValueType<T>::type createResultValue( Result result, T & data, char const * message )
   {
-#ifdef VULKAN_HPP_NO_EXCEPTIONS
+#ifndef VULKAN_HPP_NO_EXCEPTIONS
     assert( result == Result::eSuccess );
-    return ResultValue<T>( result, data );
+    //return ResultValue<T>( result, data );
+	return data;
 #else
     if ( result != Result::eSuccess )
     {
@@ -933,7 +936,7 @@ namespace VULKAN_HPP_NAMESPACE
 
   VULKAN_HPP_INLINE Result createResultValue( Result result, char const * message, std::initializer_list<Result> successCodes )
   {
-#ifdef VULKAN_HPP_NO_EXCEPTIONS
+#ifndef VULKAN_HPP_NO_EXCEPTIONS
     assert( std::find( successCodes.begin(), successCodes.end(), result ) != successCodes.end() );
 #else
     if ( std::find( successCodes.begin(), successCodes.end(), result ) == successCodes.end() )
@@ -947,7 +950,7 @@ namespace VULKAN_HPP_NAMESPACE
   template <typename T>
   VULKAN_HPP_INLINE ResultValue<T> createResultValue( Result result, T & data, char const * message, std::initializer_list<Result> successCodes )
   {
-#ifdef VULKAN_HPP_NO_EXCEPTIONS
+#ifndef VULKAN_HPP_NO_EXCEPTIONS
     assert( std::find( successCodes.begin(), successCodes.end(), result ) != successCodes.end() );
 #else
     if ( std::find( successCodes.begin(), successCodes.end(), result ) == successCodes.end() )
@@ -26191,7 +26194,7 @@ namespace VULKAN_HPP_NAMESPACE
 #ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
   VULKAN_HPP_INLINE void CommandBuffer::bindVertexBuffers( uint32_t firstBinding, ArrayProxy<const Buffer> buffers, ArrayProxy<const DeviceSize> offsets ) const
   {
-#ifdef VULKAN_HPP_NO_EXCEPTIONS
+#ifndef VULKAN_HPP_NO_EXCEPTIONS
     assert( buffers.size() == offsets.size() );
 #else
     if ( buffers.size() != offsets.size() )
@@ -29485,7 +29488,7 @@ namespace VULKAN_HPP_NAMESPACE
 #ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
   VULKAN_HPP_INLINE ResultValueType<void>::type Device::registerObjectsNVX( ObjectTableNVX objectTable, ArrayProxy<const ObjectTableEntryNVX* const> pObjectTableEntries, ArrayProxy<const uint32_t> objectIndices ) const
   {
-#ifdef VULKAN_HPP_NO_EXCEPTIONS
+#ifndef VULKAN_HPP_NO_EXCEPTIONS
     assert( pObjectTableEntries.size() == objectIndices.size() );
 #else
     if ( pObjectTableEntries.size() != objectIndices.size() )
@@ -29505,7 +29508,7 @@ namespace VULKAN_HPP_NAMESPACE
 #ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
   VULKAN_HPP_INLINE ResultValueType<void>::type Device::unregisterObjectsNVX( ObjectTableNVX objectTable, ArrayProxy<const ObjectEntryTypeNVX> objectEntryTypes, ArrayProxy<const uint32_t> objectIndices ) const
   {
-#ifdef VULKAN_HPP_NO_EXCEPTIONS
+#ifndef VULKAN_HPP_NO_EXCEPTIONS
     assert( objectEntryTypes.size() == objectIndices.size() );
 #else
     if ( objectEntryTypes.size() != objectIndices.size() )
@@ -29857,7 +29860,7 @@ namespace VULKAN_HPP_NAMESPACE
 #ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
   VULKAN_HPP_INLINE void Device::setHdrMetadataEXT( ArrayProxy<const SwapchainKHR> swapchains, ArrayProxy<const HdrMetadataEXT> metadata ) const
   {
-#ifdef VULKAN_HPP_NO_EXCEPTIONS
+#ifndef VULKAN_HPP_NO_EXCEPTIONS
     assert( swapchains.size() == metadata.size() );
 #else
     if ( swapchains.size() != metadata.size() )
@@ -31916,7 +31919,7 @@ namespace VULKAN_HPP_NAMESPACE
 #ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
   VULKAN_HPP_INLINE void Instance::debugReportMessageEXT( DebugReportFlagsEXT flags, DebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode, const std::string & layerPrefix, const std::string & message ) const
   {
-#ifdef VULKAN_HPP_NO_EXCEPTIONS
+#ifndef VULKAN_HPP_NO_EXCEPTIONS
     assert( layerPrefix.size() == message.size() );
 #else
     if ( layerPrefix.size() != message.size() )

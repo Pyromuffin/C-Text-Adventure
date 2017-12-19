@@ -2,7 +2,6 @@
 
 #include "room.h"
 #include "utility.h"
-#include "cereal\archives\json.hpp"
 
 class GameState
 {
@@ -36,9 +35,6 @@ public:
 	}
 
 	template<class Archive>
-	void serialize(Archive & archive, const uint32_t version)
-	{
-		archive(CEREAL_NVP(currentRoom), CEREAL_NVP(sneezePoints));
-	}
+	void serialize(Archive &archive, const unsigned int version);
 
 };
