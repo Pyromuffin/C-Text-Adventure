@@ -13,11 +13,16 @@
 #include "ShaderCompiler.h"
 
 #include "Renderer.h"
+#include "GameRender.h"
 
 
 static sf::Window* window; 
 static sf::Font font;
-static Renderer renderer;
+static Renderer* renderer;
+static GameRender* gameRender;
+
+static FontData ralewayData;
+static FontData inconsolataData;
 
 #define RALEWAY_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Raleway\\Raleway-Regular.ttf"
 #define INCONSOLATA_PATH "C:\\Users\\pyrom\\Documents\\GitHub\\C-Text-Adventure\\Inconsolata\\Inconsolata-Regular.ttf"
@@ -45,11 +50,13 @@ static void Init()
 	InitText();
 	
 	InitSFML();
-
-	InitFontAtlas(RALEWAY_PATH);
-
-	auto[bitmap, x, y] = GetBitmap();
-	renderer.Init(window);
+	InitFont(RALEWAY_PATH, ralewayData);
+	InitFont(RALEWAY_PATH, inconsolataData);
+	
+	renderer = new Renderer();
+	renderer->Init(window);
+	gameRender = new GameRender(*renderer);
+	gameRender->Init(ralewayData.bitmap, inconsolataData.bitmap, ralewayData.x, ralewayData.y);
 }
 
 static void CleanUp()
@@ -189,6 +196,9 @@ void RenderText(CommandString& commandString)
 
 int main(int argc, char *argv[])
 {
+
+	printf("SUPER HI!\n");
+
     Init();
 
 	CommandString commandString;

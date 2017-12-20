@@ -29,7 +29,7 @@ set(SOURCE_FILES
         main.cpp
         room.cpp
         commands.cpp items.h utility.h utility.cpp items.cpp IndexVector.h IndexVector.cpp state.cpp state.h StringHash.cpp StringHash.h CompileTimeStrings.h
-		GameScript.cpp GameState.cpp TextProcessing.cpp parse.cpp Markup.cpp STB/stb_truetype.cpp Renderer.cpp ShaderCompiler.cpp 
+		GameScript.cpp GameState.cpp TextProcessing.cpp parse.cpp Markup.cpp STB/stb_truetype.cpp Renderer.cpp ShaderCompiler.cpp GameRender.cpp
 		
 		)
 

@@ -11,8 +11,9 @@
 
 #include "STB/stb_truetype.h"
 
-#include "TextProcessing.h"
 #include "utility.h"
+#include "GameRender.h"
+#include "TextProcessing.h"
 
 
 
@@ -342,13 +343,9 @@ int GetBufferStartOfVisibleText( sf::Window* window, sf::Font* font, const int f
 //stbtt_PackFontRange(stbtt_pack_context *spc, const unsigned char *fontdata, int font_index, float font_size,
 // int first_unicode_char_in_range, int num_chars_in_range, stbtt_packedchar *chardata_for_range);
 
-static const int bitmapX = 512;
-static const int bitmapY = 512;
 
-static unsigned char bitmap[bitmapX * bitmapY];
+
 static unsigned char fontBuffer[1 << 20];
-static stbtt_packedchar packedChars[26];
-
 
 void AsciiArt(unsigned char* bitmap, int w, int h)
 {
@@ -360,33 +357,49 @@ void AsciiArt(unsigned char* bitmap, int w, int h)
 }
 
 
-
-
-
-std::tuple<unsigned char*, int, int> GetBitmap()
-{
-	return std::make_tuple(bitmap, bitmapX, bitmapY);
-}
-
-void InitFontAtlas(const char* path)
+void InitFont(const char* path, FontData& info)
 {
 	auto fontFile = fopen(path, "rb");
 	fread(fontBuffer, 1, 1 << 20, fontFile);
 	fclose(fontFile);
 
 	stbtt_pack_context spc;
-	stbtt_PackBegin(&spc, bitmap, 512, 512, 0, 1, nullptr);
+	stbtt_PackBegin(&spc, (unsigned char*)info.bitmap, info.x, info.y, 0, 1, nullptr);
 	stbtt_PackSetOversampling(&spc, 2, 2);
 
-	stbtt_PackFontRange(&spc, fontBuffer, 0, -30, 'a', 26, packedChars);
+	stbtt_PackFontRange(&spc, fontBuffer, 0, -30, 'a', 26, info.packedChars);
 	stbtt_PackEnd(&spc);
 }
 
-
-void DrawHelloWorld( sf::RenderWindow* window)
+std::array<Vert, 6> QuadToVerts(const stbtt_aligned_quad q)
 {
+	std::array<Vert, 6> verts;
+	// clockwise winding!
+	// 0 1       4
+    // 2      3  5
 
+	verts[0] = { q.x0, q.y0, q.s0, q.t0 };
+	verts[1] = { q.x1, q.y0, q.s1, q.t0 };
+	verts[2] = { q.x0, q.y1, q.s0, q.t1 };
+	verts[3] = verts[2]; // { q.x, q.y0, q.s0, q.t0 };
+	verts[4] = verts[1]; // { q.x0, q.y0, q.s0, q.t0 };
+	verts[5] = { q.x1, q.y1, q.s1, q.t1 };
 
-
+	return verts;
 }
+
+
+void GetVerts(Vert* verts, char* str, float xPos, float yPos, FontData& info)
+{
+	int charCount = strlen(str);
+
+	for (int i = 0; i < charCount; i++)
+	{
+		stbtt_aligned_quad quad;
+		stbtt_GetPackedQuad(info.packedChars, info.x, info.y, str[i] - 'a', &xPos, &yPos, &quad, false);
+		auto vertArray = QuadToVerts(quad);
+		memcpy(verts + (i * 6), vertArray.data(), sizeof(vertArray));
+	}
+}
+
 

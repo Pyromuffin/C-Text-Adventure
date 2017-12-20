@@ -50,58 +50,6 @@ void init_instance_extension_names( std::vector<const char*>& extensionNames ) {
 }
 
 
-/*
-struct VulkanData
-{
-	int framebufferWidth;
-	int framebufferHeight;
-
-	vk::Instance instance;
-	vk::PhysicalDevice gpu;
-	vk::Device device;
-	vk::PhysicalDeviceMemoryProperties memoryProps;
-
-	uint32_t queueFamilyIndex;
-	vk::Queue queue;
-
-	vk::CommandPool cmdBufferPool;
-	vk::CommandBuffer cmdBuffer;
-
-	VkSurfaceKHR presentSurface;
-	VkFormat swapchainFormat;
-	VkSwapchainKHR swapchain;
-	std::vector<VkImage> swapchainImages;
-	std::vector<VkImageView> swapchainImageViews;
-	uint32_t currentSwapchainIndex;
-	VkSemaphore imageAcquireSemaphore;
-	VkFence frameFence;
-
-	GpuImage depthBuffer;
-	GpuBuffer uniformBuffer;
-
-	std::vector<VkDescriptorSetLayout> descriptorLayouts;
-	std::vector<VkDescriptorSet> descriptorSets;
-	VkPipelineLayout pipelineLayout;
-	VkDescriptorPool descriptorPool;
-	VkSampler linearClampSampler;
-
-	VkRenderPass renderPass;
-
-	VkPipelineShaderStageCreateInfo vertexStage;
-	VkPipelineShaderStageCreateInfo fragmentStage;
-
-	VkFramebuffer framebuffers[2];
-	VkViewport viewport;
-	VkRect2D scissor;
-
-	GpuBuffer vertexBuffer;
-	VkVertexInputBindingDescription vertexBinding;
-	VkVertexInputAttributeDescription vertexAttributes[2];
-
-	VkPipeline pipeline;
-};
-*/
-
 void Renderer::CreateSurface(sf::Window* window)
 {
 VkResult res = VK_SUCCESS;
@@ -729,85 +677,6 @@ void Renderer::CreateRenderPass()
 }
 
 
-
-
-
-/*
-void CreateShaders(VulkanData& data)
-{
-
-	static const char *vertShaderText =
-		"#version 400\n"
-		"#extension GL_ARB_separate_shader_objects : enable\n"
-		"#extension GL_ARB_shading_language_420pack : enable\n"
-		"layout (std140, binding = 0) uniform buf {\n"
-		"        mat4 mvp;\n"
-		"} ubuf;\n"
-		"layout (location = 0) in vec4 pos;\n"
-		"layout (location = 1) in vec2 inTexCoords;\n"
-		"layout (location = 0) out vec2 texcoord;\n"
-		"void main() {\n"
-		"   texcoord = inTexCoords;\n"
-		"   gl_Position = ubuf.mvp * pos;\n"
-		"}\n";
-
-
-	static const char *fragShaderText =
-		"#version 400\n"
-		"#extension GL_ARB_separate_shader_objects : enable\n"
-		"#extension GL_ARB_shading_language_420pack : enable\n"
-		"layout (binding = 1) uniform sampler2D tex;\n"
-		"layout (location = 0) in vec2 texcoord;\n"
-		"layout (location = 0) out vec4 outColor;\n"
-		"void main() {\n"
-		"   outColor = textureLod(tex, texcoord, 0.0);\n"
-		"}\n";
-	
-
-	VkPipelineShaderStageCreateInfo vertexStage;
-	vertexStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertexStage.pNext = NULL;
-	vertexStage.pSpecializationInfo = NULL;
-	vertexStage.flags = 0;
-	vertexStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertexStage.pName = "main";
-
-	auto vertexShaderBin = CompileShader(vertShaderText, shaderc_shader_kind::shaderc_vertex_shader, "My Vertex Shader");
-	assert(vertexShaderBin.size() > 0);
-
-	VkShaderModuleCreateInfo moduleCreateInfo;
-	moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	moduleCreateInfo.pNext = NULL;
-	moduleCreateInfo.flags = 0;
-	moduleCreateInfo.codeSize = vertexShaderBin.size() * sizeof(uint32_t);
-	moduleCreateInfo.pCode = vertexShaderBin.data();
-	VK_CHECK( vkCreateShaderModule(data.device, &moduleCreateInfo, NULL, &vertexStage.module) );
-
-
-	VkPipelineShaderStageCreateInfo fragmentStage;
-	fragmentStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragmentStage.pNext = NULL;
-	fragmentStage.pSpecializationInfo = NULL;
-	fragmentStage.flags = 0;
-	fragmentStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragmentStage.pName = "main";
-
-	auto fragmentShaderBin = CompileShader(fragShaderText, shaderc_shader_kind::shaderc_fragment_shader, "My Fragment Shader");
-	assert(fragmentShaderBin.size() > 0);
-
-	moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	moduleCreateInfo.pNext = NULL;
-	moduleCreateInfo.flags = 0;
-	moduleCreateInfo.codeSize = fragmentShaderBin.size() * sizeof(uint32_t);
-	moduleCreateInfo.pCode = fragmentShaderBin.data();
-	VK_CHECK( vkCreateShaderModule(data.device, &moduleCreateInfo, NULL, &fragmentStage.module) );
-
-	data.vertexStage = vertexStage;
-	data.fragmentStage = fragmentStage;
-}
-
-*/
-
 void Renderer::CreateFrameBuffer()
 {
 	VkImageView attachments[2];
@@ -1371,6 +1240,12 @@ GpuBuffer Renderer::CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage
 	AllocateGpuMemory(buffer, memoryProperties);
 	VK_CHECK(vkBindBufferMemory(m_device, *buffer.buffer, *buffer.memory, 0));
 
+	vk::DescriptorBufferInfo descriptorBufferInfo;
+	descriptorBufferInfo.buffer = *buffer.buffer;
+	descriptorBufferInfo.offset = 0;
+	descriptorBufferInfo.range = size;
+	buffer.descriptorInfo = descriptorBufferInfo;
+
 	return buffer;
 }
 
@@ -1508,9 +1383,29 @@ void Renderer::TransitionImage(vk::CommandBuffer cmdBuffer, vk::Image image, vk:
 }
 
 
-void Renderer::UploadTexture(unsigned char* texture, int x, int y)
+
+void Renderer::Init(sf::Window* window)
 {
-	// implicit usage of data for now
+	m_framebufferWidth = window->getSize().x;
+	m_framebufferHeight = window->getSize().y;
+
+	CreateVulkanInstance();
+	InitDebugReports(*m_instance);
+	CreateSurface(window);
+	CreateVulkanDevice();
+	CreateCmdBuffer();
+	CreateSwapchain(window);
+	CreateDepthBuffer();
+	CreateRenderPass();
+	CreateFrameBuffer();
+
+
+
+}
+
+
+GpuImage Renderer::UploadTexture(std::byte* texture, int x, int y)
+{
 	size_t imageSize = x * y * sizeof(char);
 
 	auto stagingBuffer = CreateBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc, NiftyFlags::CpuMappableMemory);
@@ -1519,7 +1414,7 @@ void Renderer::UploadTexture(unsigned char* texture, int x, int y)
 	memcpy(cpuMemory, texture, imageSize);
 	stagingBuffer.Unmap(m_device);
 
-	auto gpuTexture = CreateImage(x, y, vk::Format::eR8Unorm, vk::ImageTiling::eOptimal, m_linearClampSampler, vk::ImageUsageFlagBits::eTransferDst| vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	auto gpuTexture = CreateImage(x, y, vk::Format::eR8Unorm, vk::ImageTiling::eOptimal, m_linearClampSampler, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
 	/*
 	VkWriteDescriptorSet writes[2];
@@ -1561,83 +1456,255 @@ void Renderer::UploadTexture(unsigned char* texture, int x, int y)
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers =(VkCommandBuffer*) &m_cmdBuffer.get();
+	submitInfo.pCommandBuffers = (VkCommandBuffer*)&m_cmdBuffer.get();
 
 	vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(m_queue);
 
-	// automatically handled by unique ptr?
-	//vkDestroyBuffer(m_device, stagingBuffer.buffer, nullptr); 
-	//vkFreeMemory(data.device, stagingBuffer.memory, nullptr);
+	return gpuTexture;
 }
 
-struct Vortex
+Pipeline::Pipeline(vk::Device device)
 {
-	float x, y;
-	float u, v;
-};
+	m_device = device;
+}
 
-static Pipeline regularPipeline{ vk::Device() };
-
-void Renderer::Init(sf::Window* window)
+vk::DescriptorSetLayoutBinding* Pipeline::HasExistingBinding(int bindingPoint)
 {
-	m_framebufferWidth = window->getSize().x;
-	m_framebufferHeight = window->getSize().y;
+	for (auto& binding : m_bindings)
+	{
+		if (bindingPoint == binding.binding)
+		{
+			&binding;
+		}
+	}
 
-	CreateVulkanInstance();
-	InitDebugReports(*m_instance);
-	CreateSurface(window);
-	CreateVulkanDevice();
-	CreateCmdBuffer();
-	CreateSwapchain(window);
-	CreateDepthBuffer();
-	CreateRenderPass();
-	CreateFrameBuffer();
+	return nullptr;
+}
 
-	regularPipeline = Pipeline(m_device);
+void Pipeline::AddVertexBufferBinding(int bindingPoint, int size, vk::VertexInputRate inputRate)
+{
+	m_vertexBufferBindings.push_back(vk::VertexInputBindingDescription(bindingPoint, size, inputRate));
+}
 
+void Pipeline::AddVertexBufferAttribute(int bindingPoint, int indexInBinding, vk::Format format, int offset)
+{
+	m_vertexAttributes.push_back(vk::VertexInputAttributeDescription(indexInBinding, bindingPoint, format, offset));
+}
 
-	regularPipeline.AddVertexBufferBinding(0, sizeof(Vortex), vk::VertexInputRate::eVertex);
-	regularPipeline.AddVertexBufferAttribute(0, 0, vk::Format::eR32G32Sfloat, 0);
-	regularPipeline.AddVertexBufferAttribute(0, 1, vk::Format::eR32G32Sfloat, sizeof(float) * 2);
+void Pipeline::AddVertexBinding(int bindingPoint, int count, vk::DescriptorType type)
+{
+	auto maybeBinding = HasExistingBinding(bindingPoint);
+	if (maybeBinding)
+	{
+		auto& binding = *maybeBinding;
+		assert(binding.descriptorType == type);
+		assert(binding.descriptorCount == count);
+		maybeBinding->stageFlags |= vk::ShaderStageFlagBits::eVertex;
+	}
+	else
+	{
+		vk::DescriptorSetLayoutBinding vertex_binding;
+		vertex_binding.binding = bindingPoint;
+		vertex_binding.descriptorType = type;
+		vertex_binding.descriptorCount = count;
+		vertex_binding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		vertex_binding.pImmutableSamplers = NULL;
+		m_bindings.push_back(vertex_binding);
+	}
+}
 
-	regularPipeline.AddVertexBinding(0, 1, vk::DescriptorType::eUniformBuffer);
-	regularPipeline.AddFragmentBinding(1, 1, vk::DescriptorType::eCombinedImageSampler);
-	
-	regularPipeline.CreateDescriptors(2); // really just need one for each font.
+void Pipeline::AddFragmentBinding(int bindingPoint, int count, vk::DescriptorType type)
+{
+	auto maybeBinding = HasExistingBinding(bindingPoint);
+	if (maybeBinding)
+	{
+		auto& binding = *maybeBinding;
+		assert(binding.descriptorType == type);
+		assert(binding.descriptorCount == count);
+		binding.stageFlags |= vk::ShaderStageFlagBits::eFragment;
+	}
+	else
+	{
+		vk::DescriptorSetLayoutBinding vertex_binding;
+		vertex_binding.binding = bindingPoint;
+		vertex_binding.descriptorType = type;
+		vertex_binding.descriptorCount = count;
+		vertex_binding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		vertex_binding.pImmutableSamplers = NULL;
+		m_bindings.push_back(vertex_binding);
+	}
+}
 
+void Pipeline::CreateDescriptors(int maxSets)
+{
+	vk::DescriptorSetLayoutCreateInfo descriptor_layout;
+	descriptor_layout.bindingCount = m_bindings.size();
+	descriptor_layout.pBindings = m_bindings.data();
+	m_descriptorLayout = m_device.createDescriptorSetLayoutUnique(descriptor_layout);
 
-	static const char *vertShaderText =
-		"#version 400\n"
-		"#extension GL_ARB_separate_shader_objects : enable\n"
-		"#extension GL_ARB_shading_language_420pack : enable\n"
-		"layout (std140, binding = 0) uniform buf {\n"
-		"        mat4 mvp;\n"
-		"} ubuf;\n"
-		"layout (location = 0) in vec2 pos;\n"
-		"layout (location = 1) in vec2 inTexCoords;\n"
-		"layout (location = 0) out vec2 texcoord;\n"
-		"void main() {\n"
-		"   vec4 position = vec4(pos.xy,0,1);\n"
-		"   texcoord = inTexCoords;\n"
-		"   gl_Position = ubuf.mvp * position;\n"
-		"}\n";
+	vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &m_descriptorLayout.get();
 
+	m_pipelineLayout = m_device.createPipelineLayoutUnique(pipelineLayoutInfo);
 
-	static const char *fragShaderText =
-		"#version 400\n"
-		"#extension GL_ARB_separate_shader_objects : enable\n"
-		"#extension GL_ARB_shading_language_420pack : enable\n"
-		"layout (binding = 1) uniform sampler2D tex;\n"
-		"layout (location = 0) in vec2 texcoord;\n"
-		"layout (location = 0) out vec4 outColor;\n"
-		"void main() {\n"
-		"   outColor = textureLod(tex, texcoord, 0.0);\n"
-		"}\n";
+	std::vector<vk::DescriptorPoolSize> poolSizes;
+	for (auto& binding : m_bindings)
+	{
+		vk::DescriptorPoolSize size{ binding.descriptorType, binding.descriptorCount * maxSets };
+		poolSizes.push_back(size);
+	}
 
+	vk::DescriptorPoolCreateInfo descriptor_pool;
+	descriptor_pool.maxSets = maxSets;
+	descriptor_pool.poolSizeCount = poolSizes.size();
+	descriptor_pool.pPoolSizes = poolSizes.data();
 
-	regularPipeline.CreateVertexShader(vertShaderText, "Regular Vertex Shader");
-	regularPipeline.CreateFragmentShader(fragShaderText, "Regular Fragment Shader");
-	regularPipeline.CreatePipeline(m_renderPass);
+	m_descriptorPool = m_device.createDescriptorPoolUnique(descriptor_pool);
+}
 
+void Pipeline::CreateVertexShader(const char* shaderText, const char* shaderName)
+{
+	auto spv = CompileShaderString(shaderText, shaderc_glsl_vertex_shader, shaderName);
+	vk::ShaderModuleCreateInfo info;
+	info.pCode = spv.data();
+	info.codeSize = spv.size() * sizeof(uint32_t);
+
+	m_vertexModule = m_device.createShaderModuleUnique(info);
+
+	m_vertexStage.module = m_vertexModule.get();
+	m_vertexStage.pName = "main";
+	m_vertexStage.stage = vk::ShaderStageFlagBits::eVertex;
+}
+
+void Pipeline::CreateFragmentShader(const char* shaderText, const char* shaderName)
+{
+	auto spv = CompileShaderString(shaderText, shaderc_glsl_fragment_shader, shaderName);
+	vk::ShaderModuleCreateInfo info;
+	info.pCode = spv.data();
+	info.codeSize = spv.size() * sizeof(uint32_t);
+
+	m_fragmentModule = m_device.createShaderModuleUnique(info);
+
+	m_fragmentStage.module = m_fragmentModule.get();
+	m_fragmentStage.pName = "main";
+	m_fragmentStage.stage = vk::ShaderStageFlagBits::eFragment;
+}
+
+void Pipeline::CreatePipeline(vk::RenderPass renderPass, int subpass /*= 0*/)
+{
+	vk::DynamicState dynamicStateEnables[VK_DYNAMIC_STATE_RANGE_SIZE];
+	vk::PipelineDynamicStateCreateInfo dynamicState = {};
+	dynamicState.pDynamicStates = dynamicStateEnables;
+	dynamicState.dynamicStateCount = 0;
+
+	vk::PipelineVertexInputStateCreateInfo vi;
+	vi.vertexBindingDescriptionCount = m_vertexBufferBindings.size();
+	vi.pVertexBindingDescriptions = m_vertexBufferBindings.data();
+	vi.vertexAttributeDescriptionCount = m_vertexAttributes.size();
+	vi.pVertexAttributeDescriptions = m_vertexAttributes.data();
+
+	vk::PipelineInputAssemblyStateCreateInfo ia;
+	ia.primitiveRestartEnable = VK_FALSE;
+	ia.topology = vk::PrimitiveTopology::eTriangleList;
+
+	vk::PipelineRasterizationStateCreateInfo rs;
+	rs.polygonMode = vk::PolygonMode::eFill;
+	rs.cullMode = vk::CullModeFlagBits::eBack;
+	rs.frontFace = vk::FrontFace::eClockwise;
+	rs.depthClampEnable = VK_FALSE;
+	rs.rasterizerDiscardEnable = VK_FALSE;
+	rs.depthBiasEnable = VK_FALSE;
+	rs.depthBiasConstantFactor = 0;
+	rs.depthBiasClamp = 0;
+	rs.depthBiasSlopeFactor = 0;
+	rs.lineWidth = 1.0f;
+
+	vk::PipelineColorBlendStateCreateInfo cb; // we will probably want alpha blending at some point.
+
+	vk::PipelineColorBlendAttachmentState att_state[1];
+	att_state[0].colorWriteMask = (vk::ColorComponentFlagBits)0xf;
+	att_state[0].blendEnable = VK_FALSE;
+	att_state[0].alphaBlendOp = vk::BlendOp::eAdd;
+	att_state[0].colorBlendOp = vk::BlendOp::eAdd;
+	att_state[0].srcColorBlendFactor = vk::BlendFactor::eZero;
+	att_state[0].dstColorBlendFactor = vk::BlendFactor::eZero;
+	att_state[0].srcAlphaBlendFactor = vk::BlendFactor::eZero;
+	att_state[0].dstAlphaBlendFactor = vk::BlendFactor::eZero;
+	cb.attachmentCount = 1;
+	cb.pAttachments = att_state;
+	cb.logicOpEnable = VK_FALSE;
+	cb.logicOp = vk::LogicOp::eNoOp;
+	cb.blendConstants[0] = 1.0f;
+	cb.blendConstants[1] = 1.0f;
+	cb.blendConstants[2] = 1.0f;
+	cb.blendConstants[3] = 1.0f;
+
+	vk::PipelineViewportStateCreateInfo vp = {};
+	vp.viewportCount = 1;
+	dynamicStateEnables[dynamicState.dynamicStateCount++] = vk::DynamicState::eViewport;
+	vp.scissorCount = 1;
+	dynamicStateEnables[dynamicState.dynamicStateCount++] = vk::DynamicState::eScissor;
+	vp.pScissors = NULL;
+	vp.pViewports = NULL;
+
+	vk::PipelineDepthStencilStateCreateInfo ds;
+	ds.depthTestEnable = VK_TRUE;
+	ds.depthWriteEnable = VK_TRUE;
+	ds.depthCompareOp = vk::CompareOp::eLessOrEqual;
+	ds.depthBoundsTestEnable = VK_FALSE;
+	ds.minDepthBounds = 0;
+	ds.maxDepthBounds = 0;
+	ds.stencilTestEnable = VK_FALSE;
+	ds.back.failOp = vk::StencilOp::eKeep;
+	ds.back.passOp = vk::StencilOp::eKeep;
+	ds.back.compareOp = vk::CompareOp::eAlways;
+	ds.back.compareMask = 0;
+	ds.back.reference = 0;
+	ds.back.depthFailOp = vk::StencilOp::eKeep;;
+	ds.back.writeMask = 0;
+	ds.front = ds.back;
+
+	vk::PipelineMultisampleStateCreateInfo ms; // same
+	ms.pSampleMask = NULL;
+	ms.rasterizationSamples = vk::SampleCountFlagBits::e1;
+	ms.sampleShadingEnable = VK_FALSE;
+	ms.alphaToCoverageEnable = VK_FALSE;
+	ms.alphaToOneEnable = VK_FALSE;
+	ms.minSampleShading = 0.0;
+
+	vk::GraphicsPipelineCreateInfo pipelineInfo;
+	pipelineInfo.layout = m_pipelineLayout.get();
+	pipelineInfo.basePipelineHandle = vk::Pipeline(); // null handle!
+	pipelineInfo.basePipelineIndex = 0;
+	pipelineInfo.pVertexInputState = &vi;
+	pipelineInfo.pInputAssemblyState = &ia;
+	pipelineInfo.pRasterizationState = &rs;
+	pipelineInfo.pColorBlendState = &cb;
+	pipelineInfo.pTessellationState = NULL;
+	pipelineInfo.pMultisampleState = &ms;
+	pipelineInfo.pDynamicState = &dynamicState;
+	pipelineInfo.pViewportState = &vp;
+	pipelineInfo.pDepthStencilState = &ds;
+
+	vk::PipelineShaderStageCreateInfo stages[] = { m_vertexStage, m_fragmentStage };
+	pipelineInfo.pStages = stages;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.renderPass = renderPass;
+	pipelineInfo.subpass = subpass;
+
+	m_pipeline = m_device.createGraphicsPipelineUnique(nullptr, pipelineInfo);
+
+	m_ready = true;
+}
+
+std::vector<vk::UniqueDescriptorSet> Pipeline::AllocateDescriptorSets(int count /*= 1*/)
+{
+	vk::DescriptorSetAllocateInfo alloc_info;
+	alloc_info.descriptorPool = m_descriptorPool.get();
+	alloc_info.descriptorSetCount = count;
+	vk::DescriptorSetLayout layouts[] = { m_descriptorLayout.get(), m_descriptorLayout.get() };
+	alloc_info.pSetLayouts = layouts;
+	return m_device.allocateDescriptorSetsUnique(alloc_info);
 }

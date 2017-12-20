@@ -2,6 +2,7 @@
 
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include "STB/stb_truetype.h"
 
 class CursorBlinkTimer
 {
@@ -54,15 +55,27 @@ public:
 
 };
 
+struct FontData
+{
+	static const int x = 512;
+	static const int y = 512;
+
+	std::byte bitmap[x * y];
+	stbtt_packedchar packedChars[26];
+};
+
+
+
 
 void InitText();
-void InitFontAtlas(const char* path);
 void Print(const char* formatString, ...);
 char* GetTextBuffer();
-
-std::tuple<unsigned char*, int, int> GetBitmap();
 
 bool HandleKeyDown(const sf::Event& e, CommandString& commandString);
 
 int GetBufferStartOfVisibleText(sf::Window* window, sf::Font* font, int fontSize, int windowScrollOffset);
+void InitFont(const char* path, FontData& info);
+struct Vert;
+void GetVerts(Vert* verts, char* str, float xPos, float yPos, FontData& info);
+
 std::vector<std::string> DoWordWrappingOnBlockOfText(sf::Window* window, sf::Font* font, const int fontSize, char *text, float padding);
