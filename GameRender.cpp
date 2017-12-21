@@ -10,7 +10,8 @@
 
 GameRender::GameRender(Renderer& r) :
 	renderer(r),
-	regularPipeline(r.m_device)
+	regularPipeline(r.m_device),
+	vertIndex(0)
 {
 
 }
@@ -27,7 +28,7 @@ void GameRender::CreateUniformBuffer()
 
 void GameRender::UpdateUniformBuffer()
 {
-	auto Projection = glm::ortho(0.0f, (float)renderer.m_framebufferWidth, 0.0f, (float)renderer.m_framebufferHeight);
+	auto Projection = glm::ortho(0.0f, (float)renderer.m_framebufferWidth, (float)renderer.m_framebufferHeight, 0.0f, 0.0f, 1.0f );
 	auto View = glm::lookAt(
 		glm::vec3(0, 0, -10), // Camera is at (-5,3,-10), in World Space
 		glm::vec3(0, 0, 0),    // and looks at the origin
@@ -39,7 +40,7 @@ void GameRender::UpdateUniformBuffer()
 		0.0f, 0.0f, 0.5f, 0.0f,
 		0.0f, 0.0f, 0.5f, 1.0f);
 
-	auto MVP = Clip * Projection * View;
+	auto MVP = Clip * Projection;
 	uniformBuffer.Upload(renderer.m_device, MVP);
 }
 
@@ -101,7 +102,8 @@ void GameRender::Init(std::byte* ralewayBitmap, std::byte* inconsolataBitmap, in
 		"layout (location = 0) in vec2 texcoord;\n"
 		"layout (location = 0) out vec4 outColor;\n"
 		"void main() {\n"
-		"   outColor = textureLod(tex, texcoord, 0.0);\n"
+		"   float alpha = textureLod(tex, texcoord, 0.0).r; \n"
+		"   outColor = vec4(1,1,1, alpha);\n"
 		"}\n";
 
 
@@ -109,8 +111,8 @@ void GameRender::Init(std::byte* ralewayBitmap, std::byte* inconsolataBitmap, in
 	regularPipeline.CreateFragmentShader(fragShaderText, "Regular Fragment Shader");
 	regularPipeline.CreatePipeline(renderer.m_renderPass);
 
-	ralewayFont = renderer.UploadTexture(ralewayBitmap, renderer.m_framebufferWidth, renderer.m_framebufferHeight);
-	inconsolataFont = renderer.UploadTexture(inconsolataBitmap, renderer.m_framebufferWidth, renderer.m_framebufferHeight);
+	ralewayFont = renderer.UploadTexture(ralewayBitmap, 512, 512);
+	inconsolataFont = renderer.UploadTexture(inconsolataBitmap, 512, 512);
 
 	CreateUniformBuffer();
 	CreateVertexBuffer();
@@ -150,8 +152,10 @@ void GameRender::Init(std::byte* ralewayBitmap, std::byte* inconsolataBitmap, in
 }
 
 
-void GameRender::RenderFrame()
+void GameRender::RenderFrame(FontData& ralewayFont, FontData& inconsolataFont)
 {
+	ResetVertexBuffer();
+	UpdateUniformBuffer();
 	auto cmdBuffer = renderer.BeginRenderPass();
 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *regularPipeline.m_pipeline);
 	// bind raleway
@@ -160,5 +164,14 @@ void GameRender::RenderFrame()
 	const VkDeviceSize offsets[1] = { 0 };
 	cmdBuffer.bindVertexBuffers(0, 1, &vertexBuffer.buffer.get(), offsets);
 
+	renderer.SetDefaultViewportAndScissor(cmdBuffer);
+	Vert myVerticies[66];
+	GetVerts(myVerticies, "helloworld", 0, 30, ralewayFont);
+	DrawVerts(cmdBuffer, myVerticies, 60);
+	
+	renderer.EndRenderPass(cmdBuffer);
 
+	renderer.SubmitCommandBuffers(&cmdBuffer, 1, renderer.m_frameFence);
+	renderer.WaitForFence(renderer.m_frameFence, sf::seconds(1.0f).asNanoseconds());
+	renderer.Present();
 }

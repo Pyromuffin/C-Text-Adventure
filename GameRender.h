@@ -3,7 +3,7 @@
 #include <Vector>
 #include <cstddef>
 #include "Renderer.h"
-
+#include "TextProcessing.h"
 
 struct Vert
 {
@@ -43,5 +43,5 @@ public:
 	void DrawVerts(vk::CommandBuffer cmdBuffer, Vert* verts, int vertCount);
 
 	void Init(std::byte* ralewayBitmap, std::byte* inconsolataBitmap, int x, int y);
-	void RenderFrame();
+	void RenderFrame(FontData& ralewayFont, FontData& inconsolataFont);
 };

@@ -236,6 +236,7 @@ int main(int argc, char *argv[])
 		}
 
 		RenderText(commandString);
+		gameRender->RenderFrame(ralewayData, inconsolataData);
     }
 
     CleanUp();

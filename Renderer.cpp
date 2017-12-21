@@ -983,6 +983,24 @@ bool Renderer::WaitForFence(vk::Fence fence, uint64_t timeoutNanos)
 	return res == vk::Result::eTimeout;
 }
 
+void Renderer::SetDefaultViewportAndScissor(vk::CommandBuffer cmdBuffer)
+{
+	m_viewport.width = static_cast<float>(m_framebufferWidth);
+	m_viewport.height = static_cast<float>(m_framebufferHeight);
+	m_viewport.minDepth = 0.0f;
+	m_viewport.maxDepth = 1.0f;
+	m_viewport.x = static_cast<float>(0);
+	m_viewport.y = static_cast<float>(0);
+
+	cmdBuffer.setViewport(0, 1, &m_viewport);
+
+	m_scissor.extent.width = m_framebufferWidth;
+	m_scissor.extent.height = m_framebufferHeight;
+	m_scissor.offset.x = 0;
+	m_scissor.offset.y = 0;
+	cmdBuffer.setScissor(0, 1, &m_scissor);
+}
+
 void Renderer::SetViewportAndScissor(vk::CommandBuffer cmdBuffer, sf::Vector2u size, sf::Vector2u offset)
 {
 	m_viewport.width = static_cast<float>(size.x);
@@ -1625,13 +1643,13 @@ void Pipeline::CreatePipeline(vk::RenderPass renderPass, int subpass /*= 0*/)
 
 	vk::PipelineColorBlendAttachmentState att_state[1];
 	att_state[0].colorWriteMask = (vk::ColorComponentFlagBits)0xf;
-	att_state[0].blendEnable = VK_FALSE;
+	att_state[0].blendEnable = VK_TRUE;
 	att_state[0].alphaBlendOp = vk::BlendOp::eAdd;
 	att_state[0].colorBlendOp = vk::BlendOp::eAdd;
-	att_state[0].srcColorBlendFactor = vk::BlendFactor::eZero;
-	att_state[0].dstColorBlendFactor = vk::BlendFactor::eZero;
-	att_state[0].srcAlphaBlendFactor = vk::BlendFactor::eZero;
-	att_state[0].dstAlphaBlendFactor = vk::BlendFactor::eZero;
+	att_state[0].srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+	att_state[0].dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+	att_state[0].srcAlphaBlendFactor = vk::BlendFactor::eSrcAlpha;
+	att_state[0].dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
 	cb.attachmentCount = 1;
 	cb.pAttachments = att_state;
 	cb.logicOpEnable = VK_FALSE;

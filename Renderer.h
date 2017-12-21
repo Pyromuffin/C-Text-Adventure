@@ -105,6 +105,7 @@ public:
 	void EndRenderPass(vk::CommandBuffer cmdBuffer);
 	void SubmitCommandBuffers(vk::CommandBuffer * cmdBuffers, uint32_t commandBufferCount, vk::Fence fence);
 	bool WaitForFence(vk::Fence fence, uint64_t timeoutNanos);
+	void SetDefaultViewportAndScissor(vk::CommandBuffer cmdBuffer);
 	void SetViewportAndScissor(vk::CommandBuffer cmdBuffer, sf::Vector2u size, sf::Vector2u offset);
 	void Present();
 	GpuBuffer CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryProperties);
