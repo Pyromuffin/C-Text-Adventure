@@ -16,7 +16,6 @@
 #include "TextProcessing.h"
 
 
-
 static char* s_textBuffer = nullptr;
 
 static const int INITIAL_TEXT_BUFFER_SIZE = 10000;
@@ -357,8 +356,11 @@ void AsciiArt(unsigned char* bitmap, int w, int h)
 }
 
 
+
 void InitFont(const char* path, FontData& info)
 {
+	constexpr int fontSize = 30;
+
 	auto fontFile = fopen(path, "rb");
 	fread(fontBuffer, 1, 1 << 20, fontFile);
 	fclose(fontFile);
@@ -367,7 +369,8 @@ void InitFont(const char* path, FontData& info)
 	stbtt_PackBegin(&spc, (unsigned char*)info.bitmap, info.x, info.y, 0, 1, nullptr);
 	stbtt_PackSetOversampling(&spc, 2, 2);
 
-	stbtt_PackFontRange(&spc, fontBuffer, 0, -30, 'a', 26, info.packedChars);
+
+	stbtt_PackFontRange(&spc, fontBuffer, 0, -fontSize, ' ', printableCharCount, info.packedChars);
 	stbtt_PackEnd(&spc);
 }
 
@@ -396,7 +399,7 @@ void GetVerts(Vert* verts, char* str, float xPos, float yPos, FontData& info)
 	for (int i = 0; i < charCount; i++)
 	{
 		stbtt_aligned_quad quad;
-		stbtt_GetPackedQuad(info.packedChars, info.x, info.y, str[i] - 'a', &xPos, &yPos, &quad, false);
+		stbtt_GetPackedQuad(info.packedChars, info.x, info.y, str[i] - ' ', &xPos, &yPos, &quad, false);
 		auto vertArray = QuadToVerts(quad);
 		memcpy(verts + (i * 6), vertArray.data(), sizeof(vertArray));
 	}

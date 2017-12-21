@@ -55,13 +55,16 @@ public:
 
 };
 
+constexpr int printableCharCount = '~' - ' '; // the printable range on the ascii chart.
+
+
 struct FontData
 {
 	static const int x = 512;
 	static const int y = 512;
 
 	std::byte bitmap[x * y];
-	stbtt_packedchar packedChars[26];
+	stbtt_packedchar packedChars[printableCharCount];
 };
 
 

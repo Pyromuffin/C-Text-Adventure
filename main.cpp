@@ -51,7 +51,7 @@ static void Init()
 	
 	InitSFML();
 	InitFont(RALEWAY_PATH, ralewayData);
-	InitFont(RALEWAY_PATH, inconsolataData);
+	InitFont(INCONSOLATA_PATH, inconsolataData);
 	
 	renderer = new Renderer();
 	renderer->Init(window);
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 		}
 
 		RenderText(commandString);
-		gameRender->RenderFrame(ralewayData, inconsolataData);
+		gameRender->RenderFrame(commandString.GetBuffer(), ralewayData, inconsolataData);
     }
 
     CleanUp();

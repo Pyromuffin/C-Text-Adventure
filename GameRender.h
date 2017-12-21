@@ -3,7 +3,8 @@
 #include <Vector>
 #include <cstddef>
 #include "Renderer.h"
-#include "TextProcessing.h"
+
+struct FontData;
 
 struct Vert
 {
@@ -42,6 +43,8 @@ public:
 
 	void DrawVerts(vk::CommandBuffer cmdBuffer, Vert* verts, int vertCount);
 
+	void DrawText(vk::CommandBuffer cmdBuffer, char* str, sf::Vector2f position, FontData& font);
 	void Init(std::byte* ralewayBitmap, std::byte* inconsolataBitmap, int x, int y);
 	void RenderFrame(FontData& ralewayFont, FontData& inconsolataFont);
+	void RenderFrame(char* consoleStr, FontData& ralewayFont, FontData& inconsolataFont);
 };

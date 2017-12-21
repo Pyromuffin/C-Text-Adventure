@@ -64,6 +64,25 @@ void GameRender::DrawVerts(vk::CommandBuffer cmdBuffer, Vert* verts, int vertCou
 	vertIndex += vertCount;
 }
 
+void GameRender::DrawText(vk::CommandBuffer cmdBuffer, char* str, sf::Vector2f position, FontData& font)
+{
+	size_t length = strlen(str);
+	int vertCount = length * 6;
+
+	assert(vertCount + vertIndex < maxVertices);
+
+	vk::DeviceSize offset = vertIndex * sizeof(Vert);
+	vk::DeviceSize size = vertCount * sizeof(Vert);
+
+	auto mem = vertexBuffer.Map(renderer.m_device, offset, size);
+	GetVerts((Vert*)mem, str, position.x, position.y, font);
+	vertexBuffer.Unmap(renderer.m_device);
+
+	cmdBuffer.draw(vertCount, 1, vertIndex, 0);
+
+	vertIndex += vertCount;
+}
+
 void GameRender::Init(std::byte* ralewayBitmap, std::byte* inconsolataBitmap, int x, int y)
 {
 	regularPipeline.AddVertexBufferBinding(0, sizeof(Vert), vk::VertexInputRate::eVertex);
@@ -152,7 +171,7 @@ void GameRender::Init(std::byte* ralewayBitmap, std::byte* inconsolataBitmap, in
 }
 
 
-void GameRender::RenderFrame(FontData& ralewayFont, FontData& inconsolataFont)
+void GameRender::RenderFrame(char* consoleStr, FontData& ralewayFont, FontData& inconsolataFont)
 {
 	ResetVertexBuffer();
 	UpdateUniformBuffer();
@@ -163,12 +182,12 @@ void GameRender::RenderFrame(FontData& ralewayFont, FontData& inconsolataFont)
 
 	const VkDeviceSize offsets[1] = { 0 };
 	cmdBuffer.bindVertexBuffers(0, 1, &vertexBuffer.buffer.get(), offsets);
-
 	renderer.SetDefaultViewportAndScissor(cmdBuffer);
-	Vert myVerticies[66];
-	GetVerts(myVerticies, "helloworld", 0, 30, ralewayFont);
-	DrawVerts(cmdBuffer, myVerticies, 60);
+
+	cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *regularPipeline.m_pipelineLayout, 0, 1, &descriptors[1].get(), 0, nullptr);
 	
+	DrawText(cmdBuffer, consoleStr, { 15, 600 - 40 }, inconsolataFont);
+
 	renderer.EndRenderPass(cmdBuffer);
 
 	renderer.SubmitCommandBuffers(&cmdBuffer, 1, renderer.m_frameFence);
